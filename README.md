@@ -2,14 +2,22 @@
 Path of Exile 2, CPU Limiting, to prevent PC full freeze while loaging maps
 
 If you found your way here, this is what you get here:
-<h3>-while loading a level in Path of Exile 2, your PC freezes complete</h3>
-<h3>-only a hard reset is working</h3>
-<h3>-you used other tools to limit the CPU while loading a level in POE2, but its anoying to set affinity(what logical processors are used by POE2) manually </h3>
+<ul>
+      <li>while loading a level in Path of Exile 2, your PC freezes complete</li>
+      <li>only a hard reset is working</li>
+      <li>you used other tools to limit the CPU while loading a level in POE2, but its anoying to set affinity(what logical processors are used by POE2) manually </li>
+</ul>
+
 
 Currently there is no patch from the game, or windows.
 It occures on Amd ***X3D, Windows 11 24H2, and some other constellations
 
-<font color=#7DDA58><h1>Here is POE2loadingPainFix</h1></font>
+<h1>
+$${\color{green}Here \space is \space your \space new \space friend \space : \space POE2loadingPainFix}$$
+</h1>
+*functions explained on bottom*
+<BR>
+-----------------
 
 Current Version: 0.1
 
