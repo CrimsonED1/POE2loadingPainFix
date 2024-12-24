@@ -23,6 +23,8 @@ using LiveChartsCore;
 using System.Text.Json;
 using System.IO;
 using static System.Environment;
+using System.Diagnostics;
+using System.Net.Http;
 
 namespace POE2loadingPainFix
 {
@@ -31,6 +33,8 @@ namespace POE2loadingPainFix
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        public string Version = "0.1";
+
         /// <summary>
         /// https://stackoverflow.com/questions/54848286/performancecounter-physicaldisk-disk-time-wrong-value
         /// </summary>
@@ -89,22 +93,15 @@ namespace POE2loadingPainFix
 
         public Axis[] XAxes { get; set; }
 
+        private bool _IsInit = true;
         public MainWindow()
         {
             InitializeComponent();
+            CPUs = Environment.ProcessorCount;
+            this.Title = this.Title + $" Version: {Version} Processors: {CPUs}";
+
 
             AppConfig = AppConfig.LoadAppConfig();
-            if (AppConfig.Window_Position.Left!=0 && AppConfig.Window_Position.Top!=0)
-            {
-                this.Left = AppConfig.Window_Position.Left;
-                this.Top = AppConfig.Window_Position.Top;
-                this.Width = AppConfig.Window_Position.Width;
-                this.Height = AppConfig.Window_Position.Height;
-            }
-
-            this.Loaded += MainWindow_Loaded;
-            this.Closed += MainWindow_Closed;
-            this.SizeChanged += MainWindow_SizeChanged;
 
 
 
@@ -172,13 +169,63 @@ namespace POE2loadingPainFix
             XAxes = [_customAxis];
 
 
+
+            this.Loaded += MainWindow_Loaded;
+            this.Closed += MainWindow_Closed;
+            this.SizeChanged += MainWindow_SizeChanged;
+            this.LocationChanged += MainWindow_LocationChanged;
+
             this.DataContext = this;
+
+            CheckNewVersion();
         }
 
+        public Visibility VisNewVersionAvaible { get; private set; } = Visibility.Hidden;
+
+        private void CheckNewVersion()
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    
+                    var url = "https://raw.githubusercontent.com/CrimsonED1/POE2loadingPainFix/refs/heads/main/README.md";
+                    using (HttpClient client = new HttpClient())
+                    {
+                        string content = await client.GetStringAsync(url);
+                        var iStart = content.IndexOf("Current Version: ");
+                        var iStart2 = iStart + "Current Version: ".Length;
+                        var iEnd = content.IndexOf("\n", iStart2 + 1);
+                        if (iStart>=0 && iEnd>iStart)
+                        {
+                            var onlineversion = content.Substring(iStart2,iEnd-iStart2);
+                            if (onlineversion != Version)
+                                VisNewVersionAvaible = Visibility.Visible;
+
+                        }
+
+
+
+                        Debugging.Step();
+                    }
+                }
+                catch
+                { }
+            });
+
+           
+        }
+
+        private void MainWindow_LocationChanged(object? sender, EventArgs e)
+        {
+            if (!_IsInit)
+                AppConfig.StoreWindowPosition(this);
+        }
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            AppConfig.StoreWindowPosition(this);
+            if (!_IsInit)
+                AppConfig.StoreWindowPosition(this);
         }
 
         private static double[] GetSeparators()
@@ -293,10 +340,24 @@ namespace POE2loadingPainFix
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-
+            if (_IsInit)
+            {
+                if (AppConfig.Window_Position.Left != 0 && AppConfig.Window_Position.Top != 0)
+                {
+                    this.Left = AppConfig.Window_Position.Left;
+                    this.Top = AppConfig.Window_Position.Top;
+                    this.Width = AppConfig.Window_Position.Width;
+                    this.Height = AppConfig.Window_Position.Height;
+                }
+            }
+            _IsInit = false;
             _Throttler.Start();
         }
 
-
+        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+            e.Handled = true;
+        }
     }
 }

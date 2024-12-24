@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
+using static System.Environment;
 
 namespace POE2loadingPainFix
 {
@@ -39,7 +40,6 @@ namespace POE2loadingPainFix
                 for (int i = 0; i < cpus; i++)
                 {
                     InLimitAffinity[i] = new AffinityEntry(i, ThrottleConfig.InLimitAffinity[i]);
-                    InLimitAffinity[i].PropertyChanged += SaveOn_PropertyChanged;
                 }
             }
             else
@@ -55,6 +55,9 @@ namespace POE2loadingPainFix
                         InLimitAffinity[i] = new AffinityEntry(i, false);
                 }
             }
+
+            foreach (var entry in InLimitAffinity)
+                entry.PropertyChanged += SaveOn_PropertyChanged;
         }
 
         private void SaveOn_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -81,9 +84,10 @@ namespace POE2loadingPainFix
 #if DEBUG
                 pathconfig = @"C:\Users\Karsten\OneDrive\Dokumente\Development\POE2loadingPainFix\bin_data\appconfig.json";
 #else
-            var commonpath = GetFolderPath(SpecialFolder.CommonApplicationData);
+            var commonpath = Environment.GetFolderPath(SpecialFolder.MyDocuments);
             pathconfig = System.IO.Path.Combine(commonpath, @"POE2loadingPainFix\appconfig.json");
-
+            var dir = Path.GetDirectoryName(pathconfig);
+            Directory.CreateDirectory(dir);
 #endif
                 return pathconfig;
 
@@ -104,8 +108,8 @@ namespace POE2loadingPainFix
             try
             {
                 string json = File.ReadAllText(AppConfigPath, Encoding.UTF8);
-                res = JsonSerializer.Deserialize<AppConfig>(json);
-                res.Init();
+                res = JsonSerializer.Deserialize<AppConfig>(json);                
+                res?.Init();
             }
             catch (Exception ex)
             {
@@ -121,6 +125,7 @@ namespace POE2loadingPainFix
 
         public static void SaveAppConfig(AppConfig appConfig)
         {
+            
             string json = JsonSerializer.Serialize(appConfig);
             File.WriteAllText(AppConfigPath, json, Encoding.UTF8);
         }
