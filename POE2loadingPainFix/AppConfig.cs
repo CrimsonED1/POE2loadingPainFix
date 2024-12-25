@@ -41,6 +41,7 @@ namespace POE2loadingPainFix
                 {
                     InLimitAffinity[i] = new AffinityEntry(i, ThrottleConfig.InLimitAffinity[i]);
                 }
+                Debugging.Step();
             }
             else
             {
@@ -54,7 +55,10 @@ namespace POE2loadingPainFix
                     else
                         InLimitAffinity[i] = new AffinityEntry(i, false);
                 }
+                ThrottleConfig.InLimitAffinity = InLimitAffinity.Select(x => x.IsSet).ToArray();
             }
+
+            
 
             foreach (var entry in InLimitAffinity)
                 entry.PropertyChanged += SaveOn_PropertyChanged;

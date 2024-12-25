@@ -74,7 +74,7 @@
                             <Label Content="{Binding State.DiskUsageCaption}" FontSize="20"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <Label Content="Disk Usage (PFC: IO Read MBytes/sec):" FontSize="20"/>
+                            <Label Content="POE2 Usage (PFC: IO Read MBytes/sec):" FontSize="20"/>
                             <Label Content="{Binding State.IOReadCaption}" FontSize="20"/>
                         </StackPanel>
 

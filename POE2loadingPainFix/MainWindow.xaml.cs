@@ -21,7 +21,7 @@ namespace POE2loadingPainFix
     /// </summary>
     public partial class MainWindow : MetroWindow, INotifyPropertyChanged
     {
-        public string Version = "0.2";
+        public string Version = "0.3";
 
         /// <summary>
         /// https://stackoverflow.com/questions/54848286/performancecounter-physicaldisk-disk-time-wrong-value
@@ -89,7 +89,6 @@ namespace POE2loadingPainFix
 
             _Throttler = new Throttler(TargetExe, AppConfig.ThrottleConfig);
             _Throttler.GuiUpdate += _Throttler_GuiUpdate;
-
 
             Series = [
             new LineSeries<DateTimePoint>
