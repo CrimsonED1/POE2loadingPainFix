@@ -2,6 +2,7 @@
 using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
+using MahApps.Metro.Controls;
 using POE2loadingPainFix.CpuThrottleDiskusage;
 using SkiaSharp;
 using System.Collections.ObjectModel;
@@ -18,9 +19,9 @@ namespace POE2loadingPainFix
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window, INotifyPropertyChanged
+    public partial class MainWindow : MetroWindow, INotifyPropertyChanged
     {
-        public string Version = "0.1";
+        public string Version = "0.2";
 
         /// <summary>
         /// https://stackoverflow.com/questions/54848286/performancecounter-physicaldisk-disk-time-wrong-value
@@ -161,6 +162,17 @@ namespace POE2loadingPainFix
 
             CheckNewVersion();
         }
+
+
+        public SolidColorPaint LegendTextPaint { get; set; } =
+                new SolidColorPaint
+                {
+                    Color = SKColors.White,
+                    SKTypeface = SKTypeface.FromFamilyName("Courier New")
+                };
+
+        public SolidColorPaint LedgendBackgroundPaint { get; set; } =
+            new SolidColorPaint(SKColors.Gray);
 
         public Visibility VisNewVersionAvaible { get; private set; } = Visibility.Hidden;
 
