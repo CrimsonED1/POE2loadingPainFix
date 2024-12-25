@@ -45,9 +45,15 @@ Current Version: 0.2
 <ul>
       <li>always on: affinity is always set to the selected processors</li>
       <li>always off: the program doesnt do any affinity</li>
-      <li>auto-limit by disk-useage: currently the best way and set to default. This limits POE2 to the selected affinity, if the disk (POE runs on) is higher selected % (40% default)</li>
-      <li>auto-limit by process-I/O bytes/s: this will to the same like by disk usage, but only via the POE2 I/O bytes/s. I couldnt get this to a save level, but i didnt remove this function. its hard to find level when it goes to limiting function. but maybe you get a perfect config. let me know</li>
+      <li>auto-limit by POE2 Logfile: detects if a level is changed. And changes affinity back if loading is done</li>
+      
 </ul>
+
+log file values to set limits:
+"Delay: OFF"
+"Got Instance Details from login server"
+log file values to reset limit:
+"Delay: ON"
 
 <h3>other functions will be explained later, but i hope they are self explaining</h3>
 
