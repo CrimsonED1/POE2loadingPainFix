@@ -50,11 +50,15 @@ Current Version: 0.2
 </ul>
 
 log file values to set limits:
+<br>
 "Delay: OFF"
+<br>
 "Got Instance Details from login server"
+<br>
 log file values to reset limit:
+<br>
 "Delay: ON"
-
+<br>
 <h3>other functions will be explained later, but i hope they are self explaining</h3>
 
 
