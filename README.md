@@ -21,7 +21,7 @@ $${\color{green}Here \space is \space your \space new \space friend \space : \sp
 <BR>
 -----------------
 
-Current Version: 0.2
+Current Version: 0.3
 
 <p>
 <a href="https://github.com/CrimsonED1/POE2loadingPainFix/releases">
