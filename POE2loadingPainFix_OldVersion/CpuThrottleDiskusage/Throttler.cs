@@ -23,7 +23,6 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         Config Config;
         PerformanceCounter? Disk_Time_Counter;
         PerformanceCounter? Process_IO_ReadBytesPerSecCounter;
-        PerformanceCounter? CPU_Total_Counter;
         string ExeName { get; }
         public event EventHandler<State>? GuiUpdate;
 
@@ -65,8 +64,6 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         {
             Disk_Time_Counter?.Dispose();
             Disk_Time_Counter = null;
-            CPU_Total_Counter?.Dispose(); 
-            CPU_Total_Counter = null;
             Process_IO_ReadBytesPerSecCounter?.Dispose();
             Process_IO_ReadBytesPerSecCounter = null;
 
@@ -116,7 +113,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         TargetProcess? _TP = null;
         Stopwatch swTimeoutGUI = new Stopwatch();
         Stopwatch? swLimitToNormalDelaySW = null;
-        
+        Stopwatch? swLimitStartDelay = null;
         Config usedConfig;
 
         List<MeasureEntry> measures = new List<MeasureEntry>(10000);
@@ -125,6 +122,36 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
         private void Thread_Execute(object? sender)
         {
+
+
+            //try
+            //{
+            //    ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive");
+            //    foreach (ManagementObject disk in searcher.Get())
+            //    {
+            //        Trace.WriteLine($"Disk: {disk["Model"]}");
+            //        try
+            //        {
+            //            Trace.WriteLine($"Max Transfer Rate: {disk["MaxTransferRate"]} bytes per second");
+            //        }
+            //        catch
+            //        {
+            //            Trace.WriteLine($"Max Transfer Rate: Not found!");
+            //        }
+                    
+            //        foreach(var p in disk.Properties)
+            //        {
+            //            Trace.WriteLine($"{p.Name}={p.Value}");
+            //        }
+            //    }
+            //    Debugging.Step();
+            //}
+            //catch (ManagementException e)
+            //{
+            //    Trace.WriteLine("An error occurred while querying for WMI data: " + e.Message);
+            //}
+
+
 
             var sw = new Stopwatch();
             swTimeoutGUI.Start();
@@ -217,23 +244,9 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 //% Disk Time
                 Disk_Time_Counter = new PerformanceCounter("PhysicalDisk", "% Disk Read Time", $"{found_DiskCounter}", true);
             }
-
-            if(CPU_Total_Counter==null)
-            {
-#if DEBUG2
-                PerformanceCounterCategory cat = new PerformanceCounterCategory("Processor");
-                var instances = cat.GetInstanceNames();//_Total
-                Debugging.Step();
-#endif
-                CPU_Total_Counter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-                Debugging.Step();
-            }
-
         }
 
-
-   
-
+        
 
         static string ReadTail(string filename,uint targetBytes)
         {
@@ -279,7 +292,6 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
             Thread_Execute_InitCounters(process);
 
-            DateTime dtMeasure = DateTime.Now;
 
             float ioRead = Process_IO_ReadBytesPerSecCounter!.NextValue();
             double ioReadMBS = 0;
@@ -295,10 +307,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             float diskTime = Disk_Time_Counter!.NextValue();
             if (diskTime > 100)
                 diskTime = 100;
-
-            float cpuusage = CPU_Total_Counter!.NextValue();
-            if (cpuusage > 100)
-                cpuusage = 100;
+            DateTime dtMeasure = DateTime.Now;
 
 
 
@@ -322,6 +331,8 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                             process.ProcessorAffinity = af_limited;
                         }
                         break;
+                    case LimitKind.ViaDiskUsage:
+                    case LimitKind.ViaIOBytesUsage:
                     case LimitKind.ViaClientLog:
 
 
@@ -330,6 +341,21 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                         //Conditions...
                         switch (usedConfig.LimitKind)
                         {
+                            case LimitKind.ViaDiskUsage:
+                                condition = usedConfig.LimitDiskUsage;
+                                condition_value = diskTime;
+#if DEBUGSIMU
+                    diskTimeCondtions = SimulateDiskUsage(diskTimeCondtions);
+#endif
+
+                                break;
+                            //##############################
+                            case LimitKind.ViaIOBytesUsage:
+                                condition = usedConfig.LimitProcessIORead;
+                                condition_value = ioReadMBS;
+
+                                break;
+                            //##############################
                             case LimitKind.ViaClientLog:
                                 var sResetLimit = "[SHADER] Delay: ON";
                                 var sSetLimit1 = "Got Instance Details from login server";
@@ -339,6 +365,8 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                                 condition = 1;
                                 try
                                 {
+
+
                                     string fileContents = ReadTail(_TP.POE2_LogFile,20000);
                                     var iResetLimit = fileContents.LastIndexOf(sResetLimit);
                                     var iSetLimit1 = fileContents.LastIndexOf(sSetLimit1);
@@ -376,17 +404,31 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                         }
 
 
-                        //Trace.WriteLine($"condition_value: {condition_value}");
+                        Trace.WriteLine($"condition_value: {condition_value}");
 
                         if (condition_value >= condition)
                         {
+                            if (swLimitStartDelay == null)
+                            {
+                                swLimitStartDelay = new Stopwatch();
+                                swLimitStartDelay.Start();
+                            }
+
                             swLimitToNormalDelaySW = null;
-                            if (process.ProcessorAffinity != af_limited)
-                                process.ProcessorAffinity = af_limited;
+
+
+                            if (swLimitStartDelay.Elapsed.TotalSeconds >= usedConfig.LimitStartHoldSecs)
+                            {
+                                if (process.ProcessorAffinity != af_limited)
+                                    process.ProcessorAffinity = af_limited;
+                            }
+
                             Debugging.Step();
                         }
                         else if (process.ProcessorAffinity == af_limited)
                         {
+                            swLimitStartDelay = null;
+
                             if (swLimitToNormalDelaySW == null)
                             {
                                 swLimitToNormalDelaySW = new Stopwatch();
@@ -416,7 +458,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
             if (dtMeasure != DT_LastMeasure) //keep only unique entries!
             {
-                measures.Add(new MeasureEntry(dtMeasure, diskTime, ioReadMBS,cpuusage));
+                measures.Add(new MeasureEntry(dtMeasure, diskTime, ioReadMBS));
                 DT_LastMeasure = dtMeasure;
             }
 
@@ -433,7 +475,15 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                     }
                 }
 
-                
+                TimeSpan? timetoStartLimit = null;
+                if (swLimitStartDelay != null)
+                {
+                    var diff = usedConfig.LimitStartHoldSecs - swLimitStartDelay.Elapsed.TotalSeconds;
+                    if (diff > 0)
+                    {
+                        timetoStartLimit = TimeSpan.FromSeconds(diff);
+                    }
+                }
 
                 var state = new State(_TP)
                 {
@@ -447,8 +497,12 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                     state.LimitCaption += $"Reset Limit in: {timetoResetLimit.Value.TotalSeconds:n1} sec";
                 }
 
+                if (timetoStartLimit != null)
+                {
+                    state.LimitCaption += $"Start Limit in: {timetoStartLimit.Value.TotalSeconds:n1} sec";
+                }
 
-                
+
                 GuiUpdate?.Invoke(this, state);
                 swTimeoutGUI.Restart();
             }

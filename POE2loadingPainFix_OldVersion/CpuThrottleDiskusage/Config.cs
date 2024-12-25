@@ -7,12 +7,31 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
     {
         AlwaysOff = 0,
         AlwaysOn = 1,
+        ViaDiskUsage=2,
+        ViaIOBytesUsage = 3,
         ViaClientLog = 4,
     }
 
     public class Config:ICloneable,INotifyPropertyChanged
     {
         
+        /// <summary>
+        /// MB/s
+        /// </summary>
+        public double LimitProcessIORead { get; set; } = 3;
+
+        /// <summary>
+        /// percent
+        /// </summary>
+        public double LimitDiskUsage { get; set; } = 40;
+
+        public string LimitDiskUsageCaption => $"{LimitDiskUsage:N1} %";
+
+        public string LimitProcessIOReadCaption => $"{LimitProcessIORead:N1} MB/s";
+
+        public double LimitStartHoldSecs { get; set; } = 0;
+        public string LimitStartHoldSecsCaption => $"{LimitStartHoldSecs:N1} secs";
+
         public bool[] InLimitAffinity { get; set; } = new bool[] { true }; //min 1
 
         public int ThreadSleepMs { get; set; } = 10;
@@ -32,11 +51,14 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             Config res = new Config()
             {
                 InLimitAffinity = this.InLimitAffinity,
+                LimitDiskUsage = this.LimitDiskUsage,
                 LimitKind = this.LimitKind,
                 LimitToNormalDelaySecs = this.LimitToNormalDelaySecs,
                 ThreadGuiUpdateMs = this.ThreadGuiUpdateMs,
                 ThreadSleepMs = this.ThreadSleepMs,
-               
+                LimitStartHoldSecs = this.LimitStartHoldSecs,
+                LimitProcessIORead = this.LimitProcessIORead,
+                
             };
             return res;
             

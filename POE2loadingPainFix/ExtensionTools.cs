@@ -23,5 +23,32 @@ namespace POE2loadingPainFix
             return s;
 
         }
+
+        public static double[] NoiseReduction(this double[] src, int severity = 1)
+        {
+            var res = src;
+
+            for (int i = 1; i < res.Length; i++)
+            {
+                //---------------------------------------------------------------avg
+                var start = (i - severity > 0 ? i - severity : 0);
+                var end = (i + severity < res.Length ? i + severity : res.Length);
+
+                double sum = 0;
+
+                for (int j = start; j < end; j++)
+                {
+                    sum += res[j];
+                }
+
+                var avg = sum / (end - start);
+                //---------------------------------------------------------------
+                res[i] = avg;
+
+            }
+            return res;
+        }
     }
 }
+
+    

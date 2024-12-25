@@ -43,16 +43,18 @@
 
                 <GroupBox Header="Limit Kind" FontSize="22">
                     <Viewbox HorizontalAlignment="Left">
-                        <UniformGrid Rows="2" Columns="2">
+                        <UniformGrid Rows="3" Columns="2">
                             <UniformGrid.Resources>
                                 <Style TargetType="RadioButton">
                                     <Setter Property="FontSize" Value="10"/>
                                 </Style>
                             </UniformGrid.Resources>
                             <RadioButton Content="Always on " GroupName="Kind" IsChecked="{Binding IsAlwaysOn}"/>
-                            <RadioButton Content="Auto-Limit by Poe2-LogFile " GroupName="Kind" IsChecked="{Binding IsViaPoe2LogFile}"/>
+                            <RadioButton Content="Auto-limit by Disk-Usage " GroupName="Kind" IsChecked="{Binding IsViaDiskUsage}"/>
                             <RadioButton Content="Always off " GroupName="Kind" IsChecked="{Binding IsAlwaysOff}"/>
+                            <RadioButton Content="Auto-Limit by Process-I/O Bytes/s " GroupName="Kind" IsChecked="{Binding IsViaIOBytesUsage}"/>
                             <Border/>
+                            <RadioButton Content="Auto-Limit by Poe2-LogFile " GroupName="Kind" IsChecked="{Binding IsViaPoe2LogFile}"/>
                         </UniformGrid>
 
                     </Viewbox>
@@ -65,29 +67,85 @@
                 <GroupBox Header="Disk Usage">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <Label Content="CPU Usage (PFC: % Total):" FontSize="20"/>
-                            <Label Content="{Binding State.CpuUsageCaption}" FontSize="20"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="Disk Usage (PFC: % Disk Read Total):" FontSize="20"/>
+                            <Label Content="Disk Usage (PFC: % Disk Read Time):" FontSize="20"/>
                             <Label Content="{Binding State.DiskUsageCaption}" FontSize="20"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="Disk Usage (PFC: IO Read MBytes/sec):" FontSize="20"/>
-                            <Label Content="{Binding State.IOReadCaption}" FontSize="20"/>
-                        </StackPanel>
-
                         <Border Height="200">
                             <lvc:CartesianChart
                     SyncContext="{Binding SyncRoot}"
-                    Series="{Binding Series}"
+                    Series="{Binding Series_Disk}"
                     XAxes="{Binding XAxes}" LegendPosition="Right">
                             </lvc:CartesianChart>
                         </Border>
                     </StackPanel>
-                </GroupBox>             
+                </GroupBox>
 
-                <GroupBox Header="Delay reset affinity to normal">
+                <GroupBox Header="Process I/O Bytes">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Disk Usage (PFC: IO Read MBytes/sec):" FontSize="20"/>
+                            <Label Content="{Binding State.IOReadCaption}" FontSize="20"/>
+
+                        </StackPanel>
+                        <Border Height="200">
+                            <lvc:CartesianChart
+    SyncContext="{Binding SyncRoot}"
+    Series="{Binding Series_IORead}"
+    XAxes="{Binding XAxes}" LegendPosition="Right">
+                            </lvc:CartesianChart>
+                        </Border>
+                    </StackPanel>
+                </GroupBox>
+
+
+
+
+
+                <GroupBox Header="Limit Disk Usage (when cpu affinity is set)">
+
+                    <Grid Height="30">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="10*"/>
+                            <ColumnDefinition Width="90*"/>
+                        </Grid.ColumnDefinitions>
+                        <Label  Grid.Column="0" Content="{Binding AppConfig.ThrottleConfig.LimitDiskUsageCaption}"/>
+
+                        <Slider Grid.Column="1" Value="{Binding AppConfig.ThrottleConfig.LimitDiskUsage}" Minimum="1" Maximum="100"/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Limit I/O Bytes Usage (when process Mbytes/s above this)">
+
+                    <Grid Height="30">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="10*"/>
+                            <ColumnDefinition Width="90*"/>
+                        </Grid.ColumnDefinitions>
+                        <Label  Grid.Column="0" Content="{Binding AppConfig.ThrottleConfig.LimitProcessIOReadCaption}"/>
+
+                        <Slider Grid.Column="1" Value="{Binding AppConfig.ThrottleConfig.LimitProcessIORead}" Minimum="1" Maximum="100"/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Limit start delay (minimum time, how usage must be active)">
+
+                    <Grid Height="30">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="10*"/>
+                            <ColumnDefinition Width="90*"/>
+                        </Grid.ColumnDefinitions>
+                        <Label  Grid.Column="0" Content="{Binding AppConfig.ThrottleConfig.LimitStartHoldSecsCaption}"/>
+
+                        <Slider Grid.Column="1" Value="{Binding AppConfig.ThrottleConfig.LimitStartHoldSecs}" Minimum="0" Maximum="10"/>
+                    </Grid>
+                </GroupBox>
+
+
+                <GroupBox Header="Limit reset time  (after what time reset will be done)">
 
                     <Grid Height="30">
                         <Grid.ColumnDefinitions>
@@ -99,21 +157,19 @@
                     </Grid>
                 </GroupBox>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="Logical Processors:"/>
+                    <Label Content="CPUs:"/>
                     <Label Content="{Binding CPUs}"/>
 
                 </StackPanel>
-                <GroupBox Header="Affinity">
-                    <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}" MaxHeight="200">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox Content="{Binding Caption}" IsChecked="{Binding IsSet}"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </GroupBox>
+                <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}" MaxHeight="200">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <CheckBox Content="{Binding Caption}" IsChecked="{Binding IsSet}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
                 <GroupBox Header="Exception:" Visibility="{Binding VisError}">
                     <TextBlock Text="{Binding State.Error}"/>
                 </GroupBox>

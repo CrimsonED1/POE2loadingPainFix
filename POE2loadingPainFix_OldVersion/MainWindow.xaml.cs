@@ -1,17 +1,30 @@
-﻿using LiveChartsCore;
-using LiveChartsCore.Defaults;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.Serialization;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+using PropertyChanged;
+using System.Windows.Interop;
+using POE2loadingPainFix.CpuThrottleDiskusage;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
-using POE2loadingPainFix.CpuThrottleDiskusage;
 using SkiaSharp;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
+using LiveChartsCore.Defaults;
+using LiveChartsCore;
+using System.Text.Json;
+using System.IO;
+using static System.Environment;
 using System.Diagnostics;
 using System.Net.Http;
-using System.Windows;
-using System.Windows.Ink;
-using System.Windows.Navigation;
-using System.Windows.Threading;
 
 namespace POE2loadingPainFix
 {
@@ -51,6 +64,18 @@ namespace POE2loadingPainFix
             set => AppConfig.ThrottleConfig.LimitKind = LimitKind.AlwaysOff;
         }
 
+        public bool IsViaDiskUsage
+        {
+            get => AppConfig.ThrottleConfig.LimitKind == LimitKind.ViaDiskUsage;
+            set => AppConfig.ThrottleConfig.LimitKind = LimitKind.ViaDiskUsage;
+        }
+
+        public bool IsViaIOBytesUsage
+        {
+            get => AppConfig.ThrottleConfig.LimitKind == LimitKind.ViaIOBytesUsage;
+            set => AppConfig.ThrottleConfig.LimitKind = LimitKind.ViaIOBytesUsage;
+        }
+
         public bool IsViaPoe2LogFile
         {
             get => AppConfig.ThrottleConfig.LimitKind == LimitKind.ViaClientLog;
@@ -60,11 +85,12 @@ namespace POE2loadingPainFix
 
         public int CPUs { get; set; }
 
-        public ObservableCollection<ISeries> Series { get; set; }
+        public ObservableCollection<ISeries> Series_Disk { get; set; }
+        public ObservableCollection<ISeries> Series_IORead { get; set; }
         private readonly List<DateTimePoint> _DiskValues = [];
-        private readonly List<DateTimePoint> _CpuValues = [];
         private readonly List<DateTimePoint> _IOReadValues = [];
-        private readonly List<DateTimePoint> _LimitedValues = [];
+        private readonly List<DateTimePoint> _LimitedValuesDisk = [];
+        private readonly List<DateTimePoint> _LimitedValuesIO = [];
 
         private readonly DateTimeAxis _customAxis;
 
@@ -90,47 +116,25 @@ namespace POE2loadingPainFix
             _Throttler.GuiUpdate += _Throttler_GuiUpdate;
 
 
-            Series = [
-            new LineSeries<DateTimePoint>
+            Series_Disk = [
+                        new LineSeries<DateTimePoint>
             {
                 Values = _DiskValues,
                 Fill = null,
-                Name="POE2-Disk (%)",
-                Stroke = new SolidColorPaint(SKColors.Blue) { StrokeThickness = 3 },
-                GeometryFill = null,
-                GeometryStroke = null
-            },
-            new LineSeries<DateTimePoint>
-            {
-                Values = _CpuValues,
-                Fill = null,
-                Name = "CPU (%)",
-                Stroke = new SolidColorPaint(SKColors.Green) { StrokeThickness = 1,Style=SKPaintStyle.StrokeAndFill },
-                GeometryFill = null,
-                GeometryStroke = null
-            },
-            new LineSeries<DateTimePoint>
-            {
-                Values = _IOReadValues,
-                Fill = null,
-                Name = "I/O(MB/s)",
-                Stroke = new SolidColorPaint(SKColors.Purple) { StrokeThickness = 3 },
+                Name="usage(%)",
+
                 GeometryFill = null,
                 GeometryStroke = null
             },
                         new LineSeries<DateTimePoint>
             {
-                Values = _LimitedValues,
+                Values = _LimitedValuesDisk,
                 Fill = null,
-                Stroke = new SolidColorPaint(SKColors.Red) { StrokeThickness = 3 },
 
-                Name="Limited",
+                Name="limited",
                 GeometryFill = null,
                 GeometryStroke = null
-            },
-
-
-            ];
+            },];
 
             _customAxis = new DateTimeAxis(TimeSpan.FromSeconds(1), Formatter)
             {
@@ -139,6 +143,25 @@ namespace POE2loadingPainFix
                 SeparatorsPaint = new SolidColorPaint(SKColors.Black.WithAlpha(100))
             };
 
+            Series_IORead = [
+                        new LineSeries<DateTimePoint>
+            {
+                Values = _IOReadValues,
+                Fill = null,
+                Name="I/O(MB/s)",
+
+                GeometryFill = null,
+                GeometryStroke = null
+            },
+                        new LineSeries<DateTimePoint>
+            {
+                Values = _LimitedValuesIO,
+                Fill = null,
+
+                Name="limited",
+                GeometryFill = null,
+                GeometryStroke = null
+            },];
 
             _customAxis = new DateTimeAxis(TimeSpan.FromSeconds(1), Formatter)
             {
@@ -170,7 +193,7 @@ namespace POE2loadingPainFix
             {
                 try
                 {
-
+                    
                     var url = "https://raw.githubusercontent.com/CrimsonED1/POE2loadingPainFix/refs/heads/main/README.md";
                     using (HttpClient client = new HttpClient())
                     {
@@ -178,9 +201,9 @@ namespace POE2loadingPainFix
                         var iStart = content.IndexOf("Current Version: ");
                         var iStart2 = iStart + "Current Version: ".Length;
                         var iEnd = content.IndexOf("\n", iStart2 + 1);
-                        if (iStart >= 0 && iEnd > iStart)
+                        if (iStart>=0 && iEnd>iStart)
                         {
-                            var onlineversion = content.Substring(iStart2, iEnd - iStart2);
+                            var onlineversion = content.Substring(iStart2,iEnd-iStart2);
                             if (onlineversion != Version)
                                 VisNewVersionAvaible = Visibility.Visible;
 
@@ -195,7 +218,7 @@ namespace POE2loadingPainFix
                 { }
             });
 
-
+           
         }
 
         private void MainWindow_LocationChanged(object? sender, EventArgs e)
@@ -267,30 +290,18 @@ namespace POE2loadingPainFix
                     _IOReadValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
 
 
-                    //smmothen cpu...
-                    IEnumerable<DateTimePoint> cpuvals;
-                    {
-                        var values = State.MeasureEntries.Select(x => new DateTimePoint(x.DT, x.CpuUsage)).ToArray();
-                        double[] values_d = values.Select(x=>x.Value!.Value).ToArray();
-                        DateTime dtmin = values.Min(x => x.DateTime);
-                        DateTime dtmax = values.Max(x => x.DateTime);
-                        TimeSpan diff = dtmax - dtmin;
-                        var median = values_d.Median();
-
-                        cpuvals = new[] { /*new DateTimePoint(dtmin, median),*/ new DateTimePoint(dtmax, median) };
-                    }
-                    _CpuValues.AddRange(cpuvals);
-                    _CpuValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
-                    
-
                     double limitValueDisk = 0;
+                    double limitValueIO = 0;
                     if (State.TargetProcess != null && State.TargetProcess.IsCpuLimited)
                     {
                         limitValueDisk = 100;
+                        limitValueIO = 10;
                     }
 
-                    _LimitedValues.Add(new DateTimePoint(cur, limitValueDisk));
-                    _LimitedValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+                    _LimitedValuesDisk.Add(new DateTimePoint(cur, limitValueDisk));
+                    _LimitedValuesDisk.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+                    _LimitedValuesIO.Add(new DateTimePoint(cur, limitValueIO));
+                    _LimitedValuesIO.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
 
                     // we need to update the separators every time we add a new point 
                     _customAxis.CustomSeparators = GetSeparators();
@@ -310,7 +321,7 @@ namespace POE2loadingPainFix
             _Throttler?.UpdateConfig(newConfig);
             OnPropertyChanged(nameof(IsAlwaysOff));
             OnPropertyChanged(nameof(IsAlwaysOn));
-            OnPropertyChanged(nameof(IsViaPoe2LogFile));
+            OnPropertyChanged(nameof(IsViaDiskUsage));
         }
 
 
