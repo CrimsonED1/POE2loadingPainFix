@@ -43,7 +43,7 @@
 
                 <GroupBox Header="Limit Kind" FontSize="22">
                     <Viewbox HorizontalAlignment="Left">
-                        <UniformGrid Rows="2" Columns="2">
+                        <UniformGrid Rows="3" Columns="2">
                             <UniformGrid.Resources>
                                 <Style TargetType="RadioButton">
                                     <Setter Property="FontSize" Value="10"/>
@@ -53,7 +53,8 @@
                             <RadioButton Content="Auto-limit by Disk-Usage " GroupName="Kind" IsChecked="{Binding IsViaDiskUsage}"/>
                             <RadioButton Content="Always off " GroupName="Kind" IsChecked="{Binding IsAlwaysOff}"/>
                             <RadioButton Content="Auto-Limit by Process-I/O Bytes/s " GroupName="Kind" IsChecked="{Binding IsViaIOBytesUsage}"/>
-
+                            <Border/>
+                            <RadioButton Content="Auto-Limit by Poe2-LogFile " GroupName="Kind" IsChecked="{Binding IsViaPoe2LogFile}"/>
                         </UniformGrid>
 
                     </Viewbox>

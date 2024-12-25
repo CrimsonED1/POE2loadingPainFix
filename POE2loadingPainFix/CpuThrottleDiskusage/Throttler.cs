@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Threading;
@@ -244,6 +246,24 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             }
         }
 
+        
+
+        static string ReadTail(string filename,uint targetBytes)
+        {
+            using (FileStream fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                // Seek 1024 bytes from the end of the file
+                fs.Seek(-targetBytes, SeekOrigin.End);
+                // read 1024 bytes
+                byte[] bytes = new byte[targetBytes];
+                fs.Read(bytes, 0, (int)targetBytes);
+                // Convert bytes to string
+                string s = Encoding.Default.GetString(bytes);
+                // or string s = Encoding.UTF8.GetString(bytes);
+                return s;
+            }
+        }
+
         private void Thread_Execute_Sub()
         {
             var processes = Process.GetProcessesByName(ExeName);
@@ -262,6 +282,8 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             //found
             var process = processes[0];
 
+
+
             //onetime Init!
             if (_TP == null)
                 _TP = new TargetProcess(process);
@@ -276,7 +298,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             if (ioRead > 0)
             {
                 ioReadMBS = ioRead / 1000d /1000d ; //bytes => MB
-                Trace.WriteLine($"{ioReadMBS:N2}");
+                //Trace.WriteLine($"{ioReadMBS:N2}");
             }
             if (ioReadMBS > 50)
                 ioReadMBS = 50d;
@@ -311,6 +333,8 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                         break;
                     case LimitKind.ViaDiskUsage:
                     case LimitKind.ViaIOBytesUsage:
+                    case LimitKind.ViaClientLog:
+
 
                         double condition;
                         double condition_value;
@@ -332,11 +356,55 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
                                 break;
                             //##############################
+                            case LimitKind.ViaClientLog:
+                                var sResetLimit = "[SHADER] Delay: ON";
+                                var sSetLimit1 = "Got Instance Details from login server";
+                                var sSetLimit2 = "[SHADER] Delay: OFF";
+
+                                condition_value = 0;
+                                condition = 1;
+                                try
+                                {
+
+
+                                    string fileContents = ReadTail(_TP.POE2_LogFile,20000);
+                                    var iResetLimit = fileContents.LastIndexOf(sResetLimit);
+                                    var iSetLimit1 = fileContents.LastIndexOf(sSetLimit1);
+                                    var iSetLimit2 = fileContents.LastIndexOf(sSetLimit2);
+
+                                    if(iResetLimit> iSetLimit1 && iResetLimit> iSetLimit2)
+                                    {
+                                        //not limiting...
+                                        condition_value = 0;
+                                    }
+                                    else
+                                    {
+                                        //one of both...
+                                        if(iSetLimit1> iResetLimit)
+                                            condition_value = 1;
+                                        if (iSetLimit2 > iResetLimit)
+                                            condition_value = 1;
+                                    }
+                                    Debugging.Step();
+                                    
+
+                                }
+                                catch
+                                (Exception ex)
+                                {
+                                    Trace.WriteLine(ex.Message);
+                                    Debugging.Step();
+                                }
+                                break;
+
+
+                            //##############################
                             default: 
                                 throw new NotImplementedException();
                         }
 
 
+                        Trace.WriteLine($"condition_value: {condition_value}");
 
                         if (condition_value >= condition)
                         {
@@ -373,8 +441,6 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                                 swLimitToNormalDelaySW = null;
                             }
                         }
-
-
                         break;
                     default:
                         throw new ThrottlerCriticalException($"N/A {usedConfig.LimitKind}");

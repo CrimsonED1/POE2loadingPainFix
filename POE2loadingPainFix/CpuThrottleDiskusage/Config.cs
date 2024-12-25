@@ -8,7 +8,8 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         AlwaysOff = 0,
         AlwaysOn = 1,
         ViaDiskUsage=2,
-        ViaIOBytesUsage = 3
+        ViaIOBytesUsage = 3,
+        ViaClientLog = 4,
     }
 
     public class Config:ICloneable,INotifyPropertyChanged
@@ -28,7 +29,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
         public string LimitProcessIOReadCaption => $"{LimitProcessIORead:N1} MB/s";
 
-        public double LimitStartHoldSecs { get; set; } = 0.2;
+        public double LimitStartHoldSecs { get; set; } = 0;
         public string LimitStartHoldSecsCaption => $"{LimitStartHoldSecs:N1} secs";
 
         public bool[] InLimitAffinity { get; set; } = new bool[] { true }; //min 1
@@ -36,9 +37,9 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         public int ThreadSleepMs { get; set; } = 10;
         public int ThreadGuiUpdateMs { get; set; } = 300;
 
-        public double LimitToNormalDelaySecs { get; set; } = 9.5;
+        public double LimitToNormalDelaySecs { get; set; } = 4;
         public string LimitToNormalDelaySecsCaption => $"{LimitToNormalDelaySecs:N1} secs";
-        public LimitKind LimitKind { get; set; } = LimitKind.ViaDiskUsage;
+        public LimitKind LimitKind { get; set; } = LimitKind.ViaClientLog;
 
 
 

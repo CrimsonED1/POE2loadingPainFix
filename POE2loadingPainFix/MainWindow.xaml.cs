@@ -76,6 +76,11 @@ namespace POE2loadingPainFix
             set => AppConfig.ThrottleConfig.LimitKind = LimitKind.ViaIOBytesUsage;
         }
 
+        public bool IsViaPoe2LogFile
+        {
+            get => AppConfig.ThrottleConfig.LimitKind == LimitKind.ViaClientLog;
+            set => AppConfig.ThrottleConfig.LimitKind = LimitKind.ViaClientLog;
+        }
         public bool IsUpdateGraphs { get; set; } = true;
 
         public int CPUs { get; set; }
