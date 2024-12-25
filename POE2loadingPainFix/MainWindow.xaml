@@ -125,7 +125,7 @@
         <StatusBar Grid.Row="1">
             <StatusBarItem Width="20"/>
             <StatusBarItem >
-                <Label Content="!NEW Version!" Background="Yellow" FontSize="20" Visibility="{Binding VisNewVersionAvaible}"/>
+                <Label Content="!NEW Version!" Foreground="Black" Background="Yellow" FontSize="20" Visibility="{Binding VisNewVersionAvaible}"/>
             </StatusBarItem>
 
             <StatusBarItem Width="10"/>
@@ -140,7 +140,7 @@ got to project on GitHub
             <StatusBarItem>
                 
                 
-                <TextBlock FontSize="20" Background="Pink">
+                <TextBlock FontSize="20" Background="Pink" Foreground="Black">
 <Hyperlink NavigateUri="https://www.paypal.me/crimsoned" RequestNavigate="Hyperlink_RequestNavigate">
 Donate
 </Hyperlink>
