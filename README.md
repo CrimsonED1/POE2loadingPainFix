@@ -15,13 +15,13 @@ It occures on Amd ***X3D, Windows 11 24H2, and some other constellations
 <h1>
 $${\color{green}Here \space is \space your \space new \space friend \space : \space POE2loadingPainFix}$$
 </h1>
-<H2>this tool, sets affinity, and restores normal affinity on disk/process disk load. On affinity set, you will have less FPS, to compensate this, the program tries to set affinity an go back to normal when its save </H2>
+<H2>this tool, sets affinity, and restores normal affinity <del>on disk/process disk load.</del> depending on entries of the POE2 logfile. On affinity set, you will have less FPS, to compensate this, the program tries to set affinity an go back to normal when its save </H2>
 
 *functions explained on bottom*
 <BR>
 -----------------
 
-Current Version: 0.1
+Current Version: 0.2
 
 <p>
 <a href="https://github.com/CrimsonED1/POE2loadingPainFix/releases">
