@@ -18,7 +18,10 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <Viewbox Visibility="{Binding VisWaitingExe}">
-                        <Label Background="Cyan" FontSize="20" Content="Waiting for PathOfExileSteam.exe"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Background="Cyan" Foreground="Black" FontSize="20" Content="Waiting for exe:" />
+                            <Label Background="Cyan" Foreground="Black" FontSize="20" Content="{Binding PoeExes}"/>
+                        </StackPanel>
                     </Viewbox>
                     <Viewbox Visibility="{Binding VisLoadingLevel}">
                         <Label Background="Red" Foreground="White" FontSize="20" Content="POE2 CPU Limited!"/>

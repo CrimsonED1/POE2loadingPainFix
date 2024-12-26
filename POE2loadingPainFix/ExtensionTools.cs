@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace POE2loadingPainFix
 {
+
     public static class ExtensionTools
     {
+
+        
         public static string ToSingleString<T>(this IEnumerable<T> items,string seperator=",")
         {
             var s = "";

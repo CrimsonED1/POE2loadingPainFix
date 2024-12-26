@@ -21,7 +21,7 @@ namespace POE2loadingPainFix
     /// </summary>
     public partial class MainWindow : MetroWindow, INotifyPropertyChanged
     {
-        public string Version = "0.3";
+        public string Version = "0.4";
 
         /// <summary>
         /// https://stackoverflow.com/questions/54848286/performancecounter-physicaldisk-disk-time-wrong-value
@@ -33,6 +33,8 @@ namespace POE2loadingPainFix
 
         public State? State { get; private set; }
 
+
+        public string PoeExes => Throttler.POE_ExeNames.ToSingleString("/");
 
         public Visibility VisWaitingExe => State == null || (State != null && State.TargetProcess == null) ? Visibility.Visible : Visibility.Collapsed;
 
@@ -87,7 +89,7 @@ namespace POE2loadingPainFix
 
             AppConfig.ThrottleConfig.PropertyChanged += Config_PropertyChanged;
 
-            _Throttler = new Throttler(TargetExe, AppConfig.ThrottleConfig);
+            _Throttler = new Throttler(AppConfig.ThrottleConfig);
             _Throttler.GuiUpdate += _Throttler_GuiUpdate;
 
             Series = [
@@ -332,12 +334,7 @@ namespace POE2loadingPainFix
             Debugging.Step();
         }
 
-#if DEBUG2
-        private const string TargetExe = "dummypoe";
-#else
-        private const string TargetExe = "PathOfExileSteam";
 
-#endif
 
 
 

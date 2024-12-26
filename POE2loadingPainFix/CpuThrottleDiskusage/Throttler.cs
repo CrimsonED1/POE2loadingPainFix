@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static System.Net.WebRequestMethods;
 
 
 namespace POE2loadingPainFix.CpuThrottleDiskusage
@@ -24,14 +25,12 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         PerformanceCounter? Disk_Time_Counter;
         PerformanceCounter? Process_IO_ReadBytesPerSecCounter;
         PerformanceCounter? CPU_Total_Counter;
-        string ExeName { get; }
         public event EventHandler<State>? GuiUpdate;
 
         //########################################
 
-        public Throttler(string exeName, Config config)
+        public Throttler(Config config)
         {
-            ExeName = exeName;
             Config = config;
         }
 
@@ -110,7 +109,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         }
 #endif
 
-
+        public static readonly string[] POE_ExeNames = ["PathOfExileSteam", "PathOfExile"];
 
         private TimeSpan? CycleTime;
         TargetProcess? _TP = null;
@@ -175,7 +174,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             Debugging.Step();
         }//exec
 
-        private void Thread_Execute_InitCounters(Process process)
+        private void Thread_Execute_InitCounters()
         {
 
             if (Process_IO_ReadBytesPerSecCounter == null)
@@ -192,7 +191,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 #endif                
                 //IO Read Bytes/sec&
 
-                Process_IO_ReadBytesPerSecCounter = new PerformanceCounter("Process", "IO Read Bytes/sec", $"{ExeName}", true);
+                Process_IO_ReadBytesPerSecCounter = new PerformanceCounter("Process", "IO Read Bytes/sec", $"{_TP!.ExeName_NoExtension}", true);
                 Debugging.Step();
             }
 
@@ -237,7 +236,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
         static string ReadTail(string filename,uint targetBytes)
         {
-            using (FileStream fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (FileStream fs = System.IO.File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 // Seek 1024 bytes from the end of the file
                 fs.Seek(-targetBytes, SeekOrigin.End);
@@ -253,11 +252,12 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
         private void Thread_Execute_Sub()
         {
-            var processes = Process.GetProcessesByName(ExeName);
+            var processes = ProcessEx.GetProcessesByName(POE_ExeNames);
             if (processes.Length == 0)
             {
                 Debugging.Step();
                 ClearCounters();
+                _TP = null;
                 var state = new State(null)
                 {
                     CycleTime = this.CycleTime,
@@ -275,21 +275,27 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             if (_TP == null)
                 _TP = new TargetProcess(process);
             else
+            {                
                 _TP.Update(process);
+            }
 
-            Thread_Execute_InitCounters(process);
+            Thread_Execute_InitCounters();
 
             DateTime dtMeasure = DateTime.Now;
 
-            float ioRead = Process_IO_ReadBytesPerSecCounter!.NextValue();
             double ioReadMBS = 0;
+      
+            float ioRead = Process_IO_ReadBytesPerSecCounter!.NextValue();
             if (ioRead > 0)
             {
-                ioReadMBS = ioRead / 1000d /1000d ; //bytes => MB
-                //Trace.WriteLine($"{ioReadMBS:N2}");
+                ioReadMBS = ioRead / 1000d / 1000d; //bytes => MB
+                                                    //Trace.WriteLine($"{ioReadMBS:N2}");
             }
             if (ioReadMBS > 50)
                 ioReadMBS = 50d;
+            
+        
+
 
 
             float diskTime = Disk_Time_Counter!.NextValue();
