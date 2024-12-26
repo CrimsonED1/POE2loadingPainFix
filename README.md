@@ -17,11 +17,18 @@ $${\color{green}Here \space is \space your \space new \space friend \space : \sp
 </h1>
 <H2>this tool, sets affinity, and restores normal affinity <del>on disk/process disk load.</del> depending on entries of the POE2 logfile. On affinity set, you will have less FPS, to compensate this, the program tries to set affinity an go back to normal when its save </H2>
 
+<H3>Supported versions:</H3>
+      <ul>
+      <li>POE2-Steam</li>
+      <li>POE2-Standalone</li>
+</ul>
+
+
 *functions explained on bottom*
 <BR>
 -----------------
 
-Current Version: 0.3
+Current Version: 0.4
 
 <p>
 <a href="https://github.com/CrimsonED1/POE2loadingPainFix/releases">
