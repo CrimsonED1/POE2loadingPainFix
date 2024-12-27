@@ -21,7 +21,7 @@ namespace POE2loadingPainFix
     /// </summary>
     public partial class MainWindow : MetroWindow, INotifyPropertyChanged
     {
-        public string Version = "0.4";
+        public string Version = "0.5";
 
         /// <summary>
         /// https://stackoverflow.com/questions/54848286/performancecounter-physicaldisk-disk-time-wrong-value
@@ -33,6 +33,8 @@ namespace POE2loadingPainFix
 
         public State? State { get; private set; }
 
+        public string ShortException => LastException != null ? $"{LastException.GetType()}: {LastException.Message}" : "";
+        public Exception? LastException { get; private set; } = null;
 
         public string PoeExes => Throttler.POE_ExeNames.ToSingleString("/");
 
@@ -41,7 +43,7 @@ namespace POE2loadingPainFix
         public Visibility VisLoadingLevel => State != null && State.TargetProcess != null && State.TargetProcess.IsCpuLimited ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisNormal => State != null && State.TargetProcess != null && !State.TargetProcess.IsCpuLimited ? Visibility.Visible : Visibility.Collapsed;
 
-        public Visibility VisError => State != null && State.Error != "" ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility VisError => ShortException!="" ? Visibility.Visible : Visibility.Collapsed;
 
         public bool IsAlwaysOn
         {
@@ -263,6 +265,34 @@ namespace POE2loadingPainFix
             OnPropertyChanged(nameof(VisNormal));
             OnPropertyChanged(nameof(State));
 
+            if(State.LastError != null)
+            {
+                bool raiseChanged = false;
+                if (LastException == null)
+                {
+                    LastException = State.LastError;
+                    raiseChanged = true;
+                }
+                else if (LastException.Message != State.LastError.Message)
+                {
+                    //update exception...
+                    LastException = State.LastError;
+                    raiseChanged = true;
+
+                }
+
+                if (raiseChanged)
+                {
+                    OnPropertyChanged(nameof(ShortException));
+                    OnPropertyChanged(nameof(LastException));
+                    OnPropertyChanged(nameof(VisError));
+                }
+            }
+            else
+            {
+                LastException = null;
+            }
+
 
             if (State.MeasureEntries.Length > 0 && IsUpdateGraphs)
             {
@@ -360,6 +390,15 @@ namespace POE2loadingPainFix
         {
             Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
             e.Handled = true;
+        }
+
+        private void btShowFullError_Click(object sender, RoutedEventArgs e)
+        {
+            if (LastException == null)
+                return;
+            var ex = LastException;         
+            var w = new ExceptionWindow(ex);
+            w.ShowDialog();
         }
     }
 }

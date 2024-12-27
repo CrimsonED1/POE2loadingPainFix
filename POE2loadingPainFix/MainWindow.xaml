@@ -16,6 +16,13 @@
         </Grid.RowDefinitions>
         <ScrollViewer >
             <StackPanel>
+                <GroupBox Header="Exception:" Visibility="{Binding VisError}" >
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock Text="{Binding ShortException}" Background="Red" Foreground="Black"/>
+                        <Border Height="10"/>
+                        <Button x:Name="btShowFullError" Content="Show full error" Click="btShowFullError_Click" Width="200"/>
+                    </StackPanel>
+                </GroupBox>
                 <StackPanel Orientation="Horizontal">
                     <Viewbox Visibility="{Binding VisWaitingExe}">
                         <StackPanel Orientation="Horizontal">
@@ -120,9 +127,7 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </GroupBox>
-                <GroupBox Header="Exception:" Visibility="{Binding VisError}">
-                    <TextBlock Text="{Binding State.Error}"/>
-                </GroupBox>
+                
             </StackPanel>
         </ScrollViewer>
         <StatusBar Grid.Row="1">

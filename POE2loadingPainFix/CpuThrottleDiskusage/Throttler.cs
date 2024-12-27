@@ -145,21 +145,17 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 }
                 catch (Exception ex)
                 {
-                    if(ex  is ThrottlerCriticalException)
+                    if (swTimeoutGUI.Elapsed.TotalMilliseconds > usedConfig.ThreadGuiUpdateMs)
                     {
-                        Terminate = true;
+                        swTimeoutGUI.Restart();
 
                         var state = new State(_TP)
                         {
                             CycleTime = this.CycleTime,
-                            Error = ex.Message
+                            LastError = ex,
                         };
                         GuiUpdate?.Invoke(this, state);
                     }
-
-                    Debugging.Step();
-                    Trace.WriteLine(ex.Message);
-
                 }
                 finally 
                 { 
@@ -278,7 +274,8 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             {                
                 _TP.Update(process);
             }
-
+            
+            
             Thread_Execute_InitCounters();
 
             DateTime dtMeasure = DateTime.Now;
@@ -293,10 +290,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             }
             if (ioReadMBS > 50)
                 ioReadMBS = 50d;
-            
-        
-
-
+                       
 
             float diskTime = Disk_Time_Counter!.NextValue();
             if (diskTime > 100)
