@@ -302,15 +302,11 @@ namespace POE2loadingPainFix
             lock (SyncRoot)
             {
                 var cur = DateTime.Now;
-                if(State.PfcException!=null)
                 
 
                 if (State.PfcException==null && State.MeasureEntries.Length > 0 && IsUpdateGraphs)
                 {
-                    foreach (var entry in State.MeasureEntries)
-                    {
 
-                    }
                     _DiskValues.AddRange(State.MeasureEntries.Select(x => new DateTimePoint(x.DT, x.DiskUsage)));
                     _DiskValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
 
@@ -355,8 +351,6 @@ namespace POE2loadingPainFix
 
         private void Config_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-
-
             Config newConfig = (Config)AppConfig.ThrottleConfig.Clone();
             newConfig.InLimitAffinity = AppConfig.InLimitAffinity.Select(x => x.IsSet).ToArray();
 

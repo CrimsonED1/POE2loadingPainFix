@@ -291,6 +291,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             }
         }
 
+
         private void Thread_Execute_Sub()
         {
             var processes = ProcessEx.GetProcessesByName(POE_ExeNames);
