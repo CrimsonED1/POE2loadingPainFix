@@ -72,9 +72,12 @@
                     <CheckBox Content="Update graphs" IsChecked="{Binding IsUpdateGraphs}"/>
                 </Viewbox>
 
-
-                <GroupBox Header="Disk Usage">
+                <GroupBox Header="Performance graphs">
                     <StackPanel>
+                        <StackPanel Orientation="Vertical" Visibility="{Binding VisPfcError}">
+                            <Label Background="Yellow" FontSize="20" Content="PFC-Exception (no impact on POE2-CPU-limitations!)" Foreground="Black"/>
+                            <Label Background="Yellow" FontSize="20" Content="{Binding ShortPfcException}" Foreground="Black"/>
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Label Content="CPU Usage (PFC: % Total):" FontSize="20"/>
                             <Label Content="{Binding State.CpuUsageCaption}" FontSize="20"/>

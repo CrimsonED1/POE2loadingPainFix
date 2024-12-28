@@ -163,7 +163,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                     CycleTime = sw.Elapsed;
                 }
 
-                Thread.Sleep(usedConfig.ThreadSleepMs);
+                Thread.Sleep(100);
 
             }//while
 
@@ -246,6 +246,51 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             }
         }
 
+        private Exception? ExceptionPFC=null;
+        private void Thread_Execute_PFC()
+        {
+            try
+            {
+                Thread_Execute_InitCounters();
+
+                DateTime dtMeasure = DateTime.Now;
+
+                double ioReadMBS = 0;
+
+                float ioRead = Process_IO_ReadBytesPerSecCounter!.NextValue();
+                if (ioRead > 0)
+                {
+                    ioReadMBS = ioRead / 1000d / 1000d; //bytes => MB
+                                                        //Trace.WriteLine($"{ioReadMBS:N2}");
+                }
+                if (ioReadMBS > 50)
+                    ioReadMBS = 50d;
+
+
+                float diskTime = Disk_Time_Counter!.NextValue();
+                if (diskTime > 100)
+                    diskTime = 100;
+
+                float cpuusage = CPU_Total_Counter!.NextValue();
+                if (cpuusage > 100)
+                    cpuusage = 100;
+
+                if (ioReadMBS > 0)
+                    Debugging.Step();
+                               
+
+                if (dtMeasure != DT_LastMeasure) //keep only unique entries!
+                {
+                    measures.Add(new MeasureEntry(dtMeasure, diskTime, ioReadMBS, cpuusage));
+                    DT_LastMeasure = dtMeasure;
+                }
+            }
+            catch (Exception ex)
+            {
+                ExceptionPFC = ex;
+            }
+        }
+
         private void Thread_Execute_Sub()
         {
             var processes = ProcessEx.GetProcessesByName(POE_ExeNames);
@@ -274,31 +319,9 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             {                
                 _TP.Update(process);
             }
-            
-            
-            Thread_Execute_InitCounters();
 
-            DateTime dtMeasure = DateTime.Now;
+            Thread_Execute_PFC();
 
-            double ioReadMBS = 0;
-      
-            float ioRead = Process_IO_ReadBytesPerSecCounter!.NextValue();
-            if (ioRead > 0)
-            {
-                ioReadMBS = ioRead / 1000d / 1000d; //bytes => MB
-                                                    //Trace.WriteLine($"{ioReadMBS:N2}");
-            }
-            if (ioReadMBS > 50)
-                ioReadMBS = 50d;
-                       
-
-            float diskTime = Disk_Time_Counter!.NextValue();
-            if (diskTime > 100)
-                diskTime = 100;
-
-            float cpuusage = CPU_Total_Counter!.NextValue();
-            if (cpuusage > 100)
-                cpuusage = 100;
 
 
 
@@ -411,14 +434,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
             Debugging.Step();
 
-            if(ioReadMBS>0)
-                Debugging.Step();
-
-            if (dtMeasure != DT_LastMeasure) //keep only unique entries!
-            {
-                measures.Add(new MeasureEntry(dtMeasure, diskTime, ioReadMBS,cpuusage));
-                DT_LastMeasure = dtMeasure;
-            }
+            
 
             if (swTimeoutGUI.Elapsed.TotalMilliseconds > usedConfig.ThreadGuiUpdateMs)
             {
@@ -438,7 +454,8 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 var state = new State(_TP)
                 {
                     CycleTime = this.CycleTime,
-                    MeasureEntries = measures.ToArray()
+                    MeasureEntries = measures.ToArray(),
+                    PfcException = ExceptionPFC,
                 };
                 measures.Clear();
 

@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Runtime.ConstrainedExecution;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Navigation;
@@ -21,7 +22,7 @@ namespace POE2loadingPainFix
     /// </summary>
     public partial class MainWindow : MetroWindow, INotifyPropertyChanged
     {
-        public string Version = "0.5";
+        public string Version = "0.6";
 
         /// <summary>
         /// https://stackoverflow.com/questions/54848286/performancecounter-physicaldisk-disk-time-wrong-value
@@ -44,6 +45,10 @@ namespace POE2loadingPainFix
         public Visibility VisNormal => State != null && State.TargetProcess != null && !State.TargetProcess.IsCpuLimited ? Visibility.Visible : Visibility.Collapsed;
 
         public Visibility VisError => ShortException!="" ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility VisPfcError => State != null && State.PfcException!=null ? Visibility.Visible : Visibility.Collapsed;
+        public string ShortPfcException => State != null && State.PfcException != null ? State.PfcException.Message : "";
+
 
         public bool IsAlwaysOn
         {
@@ -294,11 +299,14 @@ namespace POE2loadingPainFix
             }
 
 
-            if (State.MeasureEntries.Length > 0 && IsUpdateGraphs)
+            lock (SyncRoot)
             {
-                lock (SyncRoot)
+                var cur = DateTime.Now;
+                if(State.PfcException!=null)
+                
+
+                if (State.PfcException==null && State.MeasureEntries.Length > 0 && IsUpdateGraphs)
                 {
-                    var cur = DateTime.Now;
                     foreach (var entry in State.MeasureEntries)
                     {
 
@@ -314,7 +322,7 @@ namespace POE2loadingPainFix
                     IEnumerable<DateTimePoint> cpuvals;
                     {
                         var values = State.MeasureEntries.Select(x => new DateTimePoint(x.DT, x.CpuUsage)).ToArray();
-                        double[] values_d = values.Select(x=>x.Value!.Value).ToArray();
+                        double[] values_d = values.Select(x => x.Value!.Value).ToArray();
                         DateTime dtmin = values.Min(x => x.DateTime);
                         DateTime dtmax = values.Max(x => x.DateTime);
                         TimeSpan diff = dtmax - dtmin;
@@ -324,20 +332,22 @@ namespace POE2loadingPainFix
                     }
                     _CpuValues.AddRange(cpuvals);
                     _CpuValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
-                    
 
-                    double limitValueDisk = 0;
-                    if (State.TargetProcess != null && State.TargetProcess.IsCpuLimited)
-                    {
-                        limitValueDisk = 100;
-                    }
 
-                    _LimitedValues.Add(new DateTimePoint(cur, limitValueDisk));
-                    _LimitedValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
 
-                    // we need to update the separators every time we add a new point 
-                    _customAxis.CustomSeparators = GetSeparators();
+                } //measures..
+                double limitValueDisk = 0;
+                if (State.TargetProcess != null && State.TargetProcess.IsCpuLimited)
+                {
+                    limitValueDisk = 100;
                 }
+
+                _LimitedValues.Add(new DateTimePoint(cur, limitValueDisk));
+                _LimitedValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+
+                // we need to update the separators every time we add a new point 
+                _customAxis.CustomSeparators = GetSeparators();
+
             }
 
 

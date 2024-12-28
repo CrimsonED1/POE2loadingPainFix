@@ -15,7 +15,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         
         public bool[] InLimitAffinity { get; set; } = new bool[] { true }; //min 1
 
-        public int ThreadSleepMs { get; set; } = 10;
+        
         public int ThreadGuiUpdateMs { get; set; } = 300;
 
         public double LimitToNormalDelaySecs { get; set; } = 4;
@@ -35,7 +35,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 LimitKind = this.LimitKind,
                 LimitToNormalDelaySecs = this.LimitToNormalDelaySecs,
                 ThreadGuiUpdateMs = this.ThreadGuiUpdateMs,
-                ThreadSleepMs = this.ThreadSleepMs,
+                
                
             };
             return res;

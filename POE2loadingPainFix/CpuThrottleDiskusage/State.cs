@@ -23,6 +23,7 @@
 
         public MeasureEntry[] MeasureEntries { get; set; } = new MeasureEntry[0];
 
+        public Exception? PfcException { get; set; } = null;
 
         public string CpuUsageCaption => MeasureEntries.Length > 0 ? $"{MeasureEntries.Last().CpuUsage:N1} %" : "N/A";
         public string DiskUsageCaption => MeasureEntries.Length>0 ? $"{MeasureEntries.Last().DiskUsage:N1} %" : "N/A";
