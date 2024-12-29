@@ -16,13 +16,13 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         public bool[] InLimitAffinity { get; set; } = new bool[] { true }; //min 1
 
         
-        public int ThreadGuiUpdateMs { get; set; } = 300;
+        
 
         public double LimitToNormalDelaySecs { get; set; } = 4;
         public string LimitToNormalDelaySecsCaption => $"{LimitToNormalDelaySecs:N1} secs";
         public LimitKind LimitKind { get; set; } = LimitKind.ViaClientLog;
 
-
+        public bool IsAutolimit_until1stLevel { get; set; } = true;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -34,9 +34,8 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 InLimitAffinity = this.InLimitAffinity,
                 LimitKind = this.LimitKind,
                 LimitToNormalDelaySecs = this.LimitToNormalDelaySecs,
-                ThreadGuiUpdateMs = this.ThreadGuiUpdateMs,
-                
-               
+                IsAutolimit_until1stLevel = this.IsAutolimit_until1stLevel,
+
             };
             return res;
             

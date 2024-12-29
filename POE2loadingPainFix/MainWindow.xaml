@@ -63,14 +63,26 @@
                             <RadioButton Content="Always on " GroupName="Kind" IsChecked="{Binding IsAlwaysOn}"/>
                             <RadioButton Content="Auto-Limit by Poe2-LogFile " GroupName="Kind" IsChecked="{Binding IsViaPoe2LogFile}"/>
                             <RadioButton Content="Always off " GroupName="Kind" IsChecked="{Binding IsAlwaysOff}"/>
-                            <Border/>
+             
+                            
+                            
                         </UniformGrid>
 
                     </Viewbox>
                 </GroupBox>
-                <Viewbox Height="30" HorizontalAlignment="Left">
-                    <CheckBox Content="Update graphs" IsChecked="{Binding IsUpdateGraphs}"/>
-                </Viewbox>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="50*"/>
+                        <ColumnDefinition Width="50*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Margin="5,5,5,5">
+                        <CheckBox FontSize="20" Content="Update graphs" IsChecked="{Binding IsUpdateGraphs}"/>
+                    </Border>
+                    <StackPanel  Grid.Column="1" Orientation="Vertical">
+                        <CheckBox FontSize="20" Content="(only Auto-Limit), POE2-Startup limiting " IsChecked="{Binding AppConfig.ThrottleConfig.IsAutolimit_until1stLevel}"/>
+                        <Label FontSize="16" Content="when starting POE2, it will be limited until 1st level" FontStyle="Italic"/>
+                    </StackPanel>
+                </Grid>
 
                 <GroupBox Header="Performance graphs">
                     <StackPanel>

@@ -1,16 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Reflection.PortableExecutable;
-using System.Security.Cryptography.Xml;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Input;
-using static System.Net.WebRequestMethods;
 
 
 namespace POE2loadingPainFix.CpuThrottleDiskusage
@@ -36,7 +26,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
         public void UpdateConfig(Config newConfig)
         {
-            lock(SyncRoot)
+            lock (SyncRoot)
             {
                 Config = newConfig;
             }
@@ -64,7 +54,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         {
             Disk_Time_Counter?.Dispose();
             Disk_Time_Counter = null;
-            CPU_Total_Counter?.Dispose(); 
+            CPU_Total_Counter?.Dispose();
             CPU_Total_Counter = null;
             Process_IO_ReadBytesPerSecCounter?.Dispose();
             Process_IO_ReadBytesPerSecCounter = null;
@@ -87,14 +77,14 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         Stopwatch? simulateSW;
         double SimulateDiskUsage(double orginalValue)
         {
-            if(!IsSimulateDisk)
+            if (!IsSimulateDisk)
                 return orginalValue;
             if (simulateSW == null)
             {
                 simulateSW = new Stopwatch();
                 simulateSW.Restart();
             }
-            if(simulateSW.Elapsed.TotalSeconds>5)
+            if (simulateSW.Elapsed.TotalSeconds > 5)
             {
                 IsSimulateHigh = !IsSimulateHigh;
                 simulateSW.Restart();
@@ -111,16 +101,19 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
         public static readonly string[] POE_ExeNames = ["PathOfExileSteam", "PathOfExile"];
 
-        private TimeSpan? CycleTime;
+        DateTime StartTime = DateTime.Now;
+        TimeSpan? CycleTime;
         TargetProcess? _TP = null;
         Stopwatch swTimeoutGUI = new Stopwatch();
         Stopwatch? swLimitToNormalDelaySW = null;
-        
+
         Config usedConfig;
 
         List<MeasureEntry> measures = new List<MeasureEntry>(10000);
 
         DateTime DT_LastMeasure = DateTime.Now;
+
+        int ThreadGuiUpdateMs = 300;
 
         private void Thread_Execute(object? sender)
         {
@@ -145,7 +138,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 }
                 catch (Exception ex)
                 {
-                    if (swTimeoutGUI.Elapsed.TotalMilliseconds > usedConfig.ThreadGuiUpdateMs)
+                    if (swTimeoutGUI.Elapsed.TotalMilliseconds > ThreadGuiUpdateMs)
                     {
                         swTimeoutGUI.Restart();
 
@@ -157,9 +150,9 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                         GuiUpdate?.Invoke(this, state);
                     }
                 }
-                finally 
-                { 
-                    sw.Stop(); 
+                finally
+                {
+                    sw.Stop();
                     CycleTime = sw.Elapsed;
                 }
 
@@ -213,7 +206,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 Disk_Time_Counter = new PerformanceCounter("PhysicalDisk", "% Disk Read Time", $"{found_DiskCounter}", true);
             }
 
-            if(CPU_Total_Counter==null)
+            if (CPU_Total_Counter == null)
             {
 #if DEBUG2
                 PerformanceCounterCategory cat = new PerformanceCounterCategory("Processor");
@@ -227,10 +220,10 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         }
 
 
-   
 
 
-        static string ReadTail(string filename,uint targetBytes)
+
+        static string ReadTail(string filename, uint targetBytes)
         {
             using (FileStream fs = System.IO.File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
@@ -246,7 +239,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             }
         }
 
-        private Exception? ExceptionPFC=null;
+        private Exception? ExceptionPFC = null;
         private void Thread_Execute_PFC()
         {
             try
@@ -277,7 +270,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
                 if (ioReadMBS > 0)
                     Debugging.Step();
-                               
+
 
                 if (dtMeasure != DT_LastMeasure) //keep only unique entries!
                 {
@@ -305,6 +298,8 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                     CycleTime = this.CycleTime,
                 };
 
+
+
                 GuiUpdate?.Invoke(this, state);
                 return;
             }
@@ -317,13 +312,13 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             if (_TP == null)
                 _TP = new TargetProcess(process);
             else
-            {                
+            {
                 _TP.Update(process);
             }
 
             Thread_Execute_PFC();
 
-            
+
 
 
             if (process != null)
@@ -363,26 +358,61 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                                 condition = 1;
                                 try
                                 {
-                                    string fileContents = ReadTail(_TP.POE2_LogFile,20000);
-                                    var iResetLimit = fileContents.LastIndexOf(sResetLimit);
-                                    var iSetLimit1 = fileContents.LastIndexOf(sSetLimit1);
-                                    var iSetLimit2 = fileContents.LastIndexOf(sSetLimit2);
+                                    string fileContents = ReadTail(_TP.POE2_LogFile, 20000);
 
-                                    if(iResetLimit> iSetLimit1 && iResetLimit> iSetLimit2)
+                                    _TP.iResetLimit = fileContents.LastIndexOf(sResetLimit);
+                                    _TP.iSetLimit1 = fileContents.LastIndexOf(sSetLimit1);
+                                    _TP.iSetLimit2 = fileContents.LastIndexOf(sSetLimit2);
+
+                                    bool goOn = true;
+                                    if (usedConfig.IsAutolimit_until1stLevel)
                                     {
-                                        //not limiting...
-                                        condition_value = 0;
+                                        if (_TP.StartTime > this.StartTime)
+                                        {
+                                            if (!_TP.IsFirstLevelLoaded)
+                                            {
+                                                //init
+                                                if (_TP.iResetLimit_StartTime == null)
+                                                {
+                                                    //keep the last position for reset, and ignore this one...
+                                                    _TP.iResetLimit_StartTime = _TP.iResetLimit;
+                                                }
+
+                                                //condition, after loaded a map...
+                                                if (_TP.iResetLimit > _TP.iResetLimit_StartTime)
+                                                {
+                                                    //release limit
+                                                    condition_value = 0;
+                                                    _TP.IsFirstLevelLoaded = true;
+                                                }
+                                                else
+                                                {
+                                                    //stay in limiting, until 1st level loaded
+                                                    goOn = false;
+                                                    condition_value = 1;
+                                                }
+                                            }
+                                        }
                                     }
-                                    else
+
+                                    if (goOn)
                                     {
-                                        //one of both...
-                                        if(iSetLimit1> iResetLimit)
-                                            condition_value = 1;
-                                        if (iSetLimit2 > iResetLimit)
-                                            condition_value = 1;
+                                        if (_TP.iResetLimit > _TP.iSetLimit1 && _TP.iResetLimit > _TP.iSetLimit2)
+                                        {
+                                            //not limiting...
+                                            condition_value = 0;
+                                        }
+                                        else
+                                        {
+                                            //one of both...
+                                            if (_TP.iSetLimit1 > _TP.iResetLimit)
+                                                condition_value = 1;
+                                            if (_TP.iSetLimit2 > _TP.iResetLimit)
+                                                condition_value = 1;
+                                        }
                                     }
                                     Debugging.Step();
-                                    
+
 
                                 }
                                 catch
@@ -395,7 +425,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
 
                             //##############################
-                            default: 
+                            default:
                                 throw new NotImplementedException();
                         }
 
@@ -435,9 +465,9 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
             Debugging.Step();
 
-            
 
-            if (swTimeoutGUI.Elapsed.TotalMilliseconds > usedConfig.ThreadGuiUpdateMs)
+
+            if (swTimeoutGUI.Elapsed.TotalMilliseconds > ThreadGuiUpdateMs)
             {
                 //update GUI
                 TimeSpan? timetoResetLimit = null;
@@ -450,7 +480,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                     }
                 }
 
-                
+
 
                 var state = new State(_TP)
                 {
@@ -466,7 +496,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 }
 
 
-                
+
                 GuiUpdate?.Invoke(this, state);
                 swTimeoutGUI.Restart();
             }

@@ -16,6 +16,8 @@ namespace POE2loadingPainFix
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        public string Version { get; set; } = "";
+
         [JsonIgnore]
         public AffinityEntry[] InLimitAffinity { get; private set; } = new AffinityEntry[0];
 
@@ -106,7 +108,7 @@ namespace POE2loadingPainFix
         }
 
 
-        public static AppConfig LoadAppConfig()
+        public static AppConfig LoadAppConfig(string appVersion)
         {
             AppConfig? res = null;
             try
@@ -121,9 +123,23 @@ namespace POE2loadingPainFix
             }
 
             if (res == null)
-                return DefaultConfig();
-            else
-                return res;
+            {
+                res = DefaultConfig();
+                res.Version = appVersion;
+            }
+
+            if(res.Version=="")
+            {
+                //patch old files!
+            }
+
+            if (res.Version != appVersion)
+            {
+                //patch old files!
+            }
+
+            res.Version = appVersion;
+            return res;
 
         }
 

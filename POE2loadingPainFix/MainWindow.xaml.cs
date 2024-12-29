@@ -95,7 +95,7 @@ namespace POE2loadingPainFix
             this.Title = this.Title + $" Version: {Version} Processors: {CPUs}";
 
 
-            AppConfig = AppConfig.LoadAppConfig();
+            AppConfig = AppConfig.LoadAppConfig(Version);
 
             CpuCaption = "";
             try
@@ -424,7 +424,8 @@ namespace POE2loadingPainFix
             try 
             {
                 var lines = new List<string>();
-                
+
+                lines.Add($"POE2loadingPainFix(Version) = {Version}");
                 lines.Add($"CPU = {CpuCaption}");
                 lines.Add($"LimitKind = {this.AppConfig.ThrottleConfig.LimitKind}");
                 lines.Add($"InLimitAffinity = {this.AppConfig.ThrottleConfig.InLimitAffinity.Select(x=>x.ToString()).ToSingleString()}");

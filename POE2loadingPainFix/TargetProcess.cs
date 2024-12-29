@@ -7,7 +7,6 @@ namespace POE2loadingPainFix
 {
     public class TargetProcess : ICloneable
     {
-
         public string ExeName_NoExtension=> Path.GetFileNameWithoutExtension(ImagePath);
 
         public string ImagePath { get; } = "";
@@ -19,11 +18,22 @@ namespace POE2loadingPainFix
         //public bool[] Affinity { get; } = new bool[] { true };
         public bool IsRunning { get; private set; }
 
+        public bool IsFirstLevelLoaded { get; set; } = false;
+
+        public DateTime? StartTime { get; set; } = null;
+
         public int Threads { get; private set; }
 
         public int PID { get; private set; }
 
         public bool IsCpuLimited { get; private set; }
+
+
+        public int? iResetLimit_StartTime { get; set; } = null;
+        public int iResetLimit { get; set; } = 0;
+        public int iSetLimit1 { get; set; } = 0;
+        public int iSetLimit2 { get; set; } = 0;
+
 
         public TargetProcess(Process process)
         {
@@ -38,6 +48,7 @@ namespace POE2loadingPainFix
             FileInfo f = new FileInfo(ImagePath);
             Drive = System.IO.Path.GetPathRoot(f.FullName).Substring(0,1);
 
+            StartTime = process.StartTime;
 
             Update(process);
             //Affinity = process.ProcessorAffinity;            
