@@ -323,7 +323,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
             Thread_Execute_PFC();
 
-            throw new NotImplementedException();
+            
 
 
             if (process != null)

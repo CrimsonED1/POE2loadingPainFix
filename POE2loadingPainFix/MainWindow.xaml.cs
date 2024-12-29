@@ -8,12 +8,14 @@ using SkiaSharp;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Management;
 using System.Net.Http;
 using System.Runtime.ConstrainedExecution;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Navigation;
 using System.Windows.Threading;
+
 
 namespace POE2loadingPainFix
 {
@@ -22,7 +24,7 @@ namespace POE2loadingPainFix
     /// </summary>
     public partial class MainWindow : MetroWindow, INotifyPropertyChanged
     {
-        public string Version = "0.6";
+        public string Version = "0.7";
 
         /// <summary>
         /// https://stackoverflow.com/questions/54848286/performancecounter-physicaldisk-disk-time-wrong-value
@@ -82,6 +84,9 @@ namespace POE2loadingPainFix
 
         public Axis[] XAxes { get; set; }
 
+
+        public string CpuCaption { get; }
+
         private bool _IsInit = true;
         public MainWindow()
         {
@@ -92,6 +97,14 @@ namespace POE2loadingPainFix
 
             AppConfig = AppConfig.LoadAppConfig();
 
+
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
+            var cpunames = new List<string>();
+            foreach (ManagementObject obj in searcher.Get())
+            {
+                cpunames.Add($"{obj["Name"]}");
+            }
+            CpuCaption = cpunames.ToSingleString();
 
 
             AppConfig.ThrottleConfig.PropertyChanged += Config_PropertyChanged;
@@ -406,6 +419,8 @@ namespace POE2loadingPainFix
             try 
             {
                 var lines = new List<string>();
+                
+                lines.Add($"CPU = {CpuCaption}");
                 lines.Add($"LimitKind = {this.AppConfig.ThrottleConfig.LimitKind}");
                 lines.Add($"InLimitAffinity = {this.AppConfig.ThrottleConfig.InLimitAffinity.Select(x=>x.ToString()).ToSingleString()}");
                 lines.Add($"LimitToNormalDelaySecs = {this.AppConfig.ThrottleConfig.LimitToNormalDelaySecs}");

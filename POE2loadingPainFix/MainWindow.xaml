@@ -115,11 +115,14 @@
                     </Grid>
                 </GroupBox>
                 <StackPanel Orientation="Horizontal">
+                    <Label Content="CPU:"/>
+                    <Label Content="{Binding CpuCaption}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
                     <Label Content="Logical Processors:"/>
                     <Label Content="{Binding CPUs}"/>
-
                 </StackPanel>
-                <GroupBox Header="Affinity">
+                <GroupBox Header="POE2 CPU - Affinity (when limited)">
                     <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}" MaxHeight="200">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
