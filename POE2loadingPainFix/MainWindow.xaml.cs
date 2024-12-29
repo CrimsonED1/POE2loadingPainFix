@@ -97,14 +97,19 @@ namespace POE2loadingPainFix
 
             AppConfig = AppConfig.LoadAppConfig();
 
-
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
-            var cpunames = new List<string>();
-            foreach (ManagementObject obj in searcher.Get())
+            CpuCaption = "";
+            try
             {
-                cpunames.Add($"{obj["Name"]}");
+                ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
+                var cpunames = new List<string>();
+                foreach (ManagementObject obj in searcher.Get())
+                {
+                    cpunames.Add($"{obj["Name"]}");
+                }
+                CpuCaption = cpunames.ToSingleString();
             }
-            CpuCaption = cpunames.ToSingleString();
+            catch { }
+
 
 
             AppConfig.ThrottleConfig.PropertyChanged += Config_PropertyChanged;
