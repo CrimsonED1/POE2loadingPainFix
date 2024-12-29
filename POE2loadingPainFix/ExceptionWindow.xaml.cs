@@ -21,7 +21,7 @@ namespace POE2loadingPainFix
     /// </summary>
     public partial class ExceptionWindow : Window,INotifyPropertyChanged
     {
-        public ExceptionWindow(Exception exception)
+        public ExceptionWindow(Exception exception, string additionals="")
         {
             InitializeComponent();
             
@@ -32,6 +32,8 @@ namespace POE2loadingPainFix
             lines.Add($"Is64BitOperatingSystem: {Environment.Is64BitOperatingSystem}");
             lines.Add($"Is64BitProcess: {Environment.Is64BitProcess}");
             lines.Add($"OSVersion: {Environment.OSVersion}");
+            lines.Add($"---------------------");
+            lines.Add($"{additionals}");
             lines.Add($"---------------------");
             lines.Add($"{exception}");
             lines.Add($"---------------------");

@@ -20,22 +20,44 @@ namespace POE2loadingPainFix
             return (IntPtr)res;
         }
 
+#if DEBUG
+        public static int Debug_OverrideCPUs = Environment.ProcessorCount;
+#endif
+
         public static nint GetProcessorAffinity(IEnumerable<bool> target)
         {
             bool[] targetA = target.ToArray();
+            
+            //you cannot remove all cpus!
+            if (target.All(x => x == false))
+                return 1;
+
+            int cpus = Environment.ProcessorCount;
+#if DEBUG 
+            cpus = Debug_OverrideCPUs;
+#endif
+
+            {
+                int cores = cpus / 4;
+
+                // i dont know if this could be?
+                if (cores < 0)
+                    return 1;
+            }
 
 
-            int cores = Environment.ProcessorCount / 4;
             int res = 0;
             int currentCore = 0;
             int currentCore_pu = 0;
-            int[] resCores = new int[cores];
-            for (int i = 0; i < Environment.ProcessorCount; i++)
+            var resCores = new List<int>();
+            resCores.Add(0);
+            for (int i = 0; i < cpus; i++)
             {
                 if (currentCore_pu > 3)
                 {
                     currentCore++;
                     currentCore_pu = 0;
+                    resCores.Add(0);
                 }
                 //#############
                 Debugging.Step();
@@ -64,11 +86,16 @@ namespace POE2loadingPainFix
             Debugging.Step();
 
             res = resCores[0];
-            for (int i = 1; i < cores; i++)
+            for (int i = 1; i < resCores.Count; i++)
             {
                 int cur = resCores[i] << i * 4;
                 res = res | cur;
             }
+            
+            //must always return 1
+            if (res == 0)
+                res = 1;
+
             return (IntPtr)res;
         }
     }

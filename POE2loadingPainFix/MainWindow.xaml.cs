@@ -400,8 +400,21 @@ namespace POE2loadingPainFix
         {
             if (LastException == null)
                 return;
-            var ex = LastException;         
-            var w = new ExceptionWindow(ex);
+            var ex = LastException;
+
+            string additionalinfos = "";
+            try 
+            {
+                var lines = new List<string>();
+                lines.Add($"LimitKind = {this.AppConfig.ThrottleConfig.LimitKind}");
+                lines.Add($"InLimitAffinity = {this.AppConfig.ThrottleConfig.InLimitAffinity.Select(x=>x.ToString()).ToSingleString()}");
+                lines.Add($"LimitToNormalDelaySecs = {this.AppConfig.ThrottleConfig.LimitToNormalDelaySecs}");
+                additionalinfos = lines.ToSingleString(Environment.NewLine);
+            }
+            catch { }
+
+
+            var w = new ExceptionWindow(ex, additionalinfos);
             w.ShowDialog();
         }
     }
