@@ -238,6 +238,10 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 {
                     sw.Stop();
                     CycleTime = sw.Elapsed;
+#if DEBUG
+                    if (CycleTime > TimeSpan.FromMilliseconds(150))
+                        Trace.WriteLine($"CycleTime High! {CycleTime.Value.TotalMilliseconds}");
+#endif
                 }
 
                 Thread.Sleep(100);
@@ -455,7 +459,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                                     _TP.iSetLimit2 = fileContents.LastIndexOf(sSetLimit2);
 
                                     bool goOn = true;
-                                    if (usedConfig.IsAutolimit_pulselimit_until1stLevel)
+                                    if (usedConfig.IsAutolimit_pulse_limit)
                                     {
                                         if (_TP.StartTime > this.StartTime)
                                         {
@@ -549,7 +553,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                                 swLimitToNormalDelaySW.Start();
                             }
 
-                            if (usedConfig.IsAutolimit_pulselimit_until1stLevel && !_TP.IsFirstLevelLoaded)
+                            if (usedConfig.IsAutolimit_pulse_limit && !_TP.IsFirstLevelLoaded)
                             {
                                 process.ProcessorAffinity = af_normal;
                                 swLimitToNormalDelaySW = null;

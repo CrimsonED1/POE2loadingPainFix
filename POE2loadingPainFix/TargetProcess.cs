@@ -48,6 +48,13 @@ namespace POE2loadingPainFix
             FileInfo f = new FileInfo(ImagePath);
             Drive = System.IO.Path.GetPathRoot(f.FullName).Substring(0,1);
 
+            var start_boost = process.PriorityBoostEnabled;
+            
+            var start_prio = process.PriorityClass;
+
+            process.PriorityBoostEnabled = false;
+            process.PriorityClass = ProcessPriorityClass.BelowNormal;
+
             StartTime = process.StartTime;
 
             Update(process);
@@ -70,7 +77,12 @@ namespace POE2loadingPainFix
             var af = process.ProcessorAffinity;
             nint af_normal = CpuTools.GetProcessorAffinity();
             IsCpuLimited = af != af_normal;
-            IsNotResponding = !process.Responding;
+
+            IsNotResponding = false;
+
+            ///TODO: this is also slowing down the thread, i have to move it to another thread and get the value.
+            //IsNotResponding = !process.Responding;
+            
 
             AffinityCaption = af.ToString("X");
         }
