@@ -27,7 +27,7 @@ namespace POE2loadingPainFix
         public int PID { get; private set; }
 
         public bool IsCpuLimited { get; private set; }
-
+        public bool IsNotResponding { get; private set; }
 
         public int? iResetLimit_StartTime { get; set; } = null;
         public int iResetLimit { get; set; } = 0;
@@ -70,6 +70,7 @@ namespace POE2loadingPainFix
             var af = process.ProcessorAffinity;
             nint af_normal = CpuTools.GetProcessorAffinity();
             IsCpuLimited = af != af_normal;
+            IsNotResponding = !process.Responding;
 
             AffinityCaption = af.ToString("X");
         }

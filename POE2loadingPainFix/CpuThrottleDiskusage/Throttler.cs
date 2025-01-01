@@ -1,10 +1,38 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
+using static System.Net.WebRequestMethods;
 
 
 namespace POE2loadingPainFix.CpuThrottleDiskusage
 {
+
+    public class Pulser
+    {
+        public TimeSpan Time { get; }
+        private Stopwatch StopWatch { get; }
+
+        public Pulser(TimeSpan pulseTime)
+        {
+            Time = pulseTime;
+            StopWatch = new Stopwatch();
+            StopWatch.Start();
+        }
+
+        private bool _IsHigh = false;
+        public bool IsHigh
+        {
+            get
+            {
+                if (StopWatch.Elapsed > Time)
+                {
+                    _IsHigh = !_IsHigh;
+                    StopWatch.Restart();
+                }
+                return _IsHigh;
+            }
+        }
+    }
 
     public class Throttler
     {
@@ -113,7 +141,71 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
         DateTime DT_LastMeasure = DateTime.Now;
 
-        int ThreadGuiUpdateMs = 300;
+        private bool IsGuiTaskActive = false;
+
+
+        private void DoGuiUpdate(Exception? exception = null)
+        {
+            int ThreadGuiUpdateMs = 300;
+
+            if (swTimeoutGUI.Elapsed.TotalMilliseconds > ThreadGuiUpdateMs && GuiUpdate != null)
+            {
+                swTimeoutGUI.Restart();
+
+                State state;
+                if (exception != null)
+                {
+                    state = new State(_TP)
+                    {
+                        CycleTime = this.CycleTime,
+                        LastError = exception,
+                    };
+                }
+                else
+                {
+
+
+                    //update GUI
+                    TimeSpan? timetoResetLimit = null;
+                    if (swLimitToNormalDelaySW != null)
+                    {
+                        var diff = usedConfig.LimitToNormalDelaySecs - swLimitToNormalDelaySW.Elapsed.TotalSeconds;
+                        if (diff > 0)
+                        {
+                            timetoResetLimit = TimeSpan.FromSeconds(diff);
+                        }
+                    }
+
+
+
+                    state = new State(_TP)
+                    {
+                        CycleTime = this.CycleTime,
+                        MeasureEntries = measures.ToArray(),
+                        PfcException = ExceptionPFC,
+                    };
+                    measures.Clear();
+
+                    if (timetoResetLimit != null)
+                    {
+                        state.LimitCaption += $"Reset Limit in: {timetoResetLimit.Value.TotalSeconds:n1} sec";
+                    }
+
+         
+                }
+
+                if (!IsGuiTaskActive)
+                {
+                    IsGuiTaskActive = true;
+                    Task.Run(() =>
+                    {
+                        GuiUpdate(this, state);
+                        IsGuiTaskActive = false;
+                    });
+                }
+            }
+
+        }
 
         private void Thread_Execute(object? sender)
         {
@@ -138,17 +230,9 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 }
                 catch (Exception ex)
                 {
-                    if (swTimeoutGUI.Elapsed.TotalMilliseconds > ThreadGuiUpdateMs)
-                    {
-                        swTimeoutGUI.Restart();
+                    DoGuiUpdate(ex);
 
-                        var state = new State(_TP)
-                        {
-                            CycleTime = this.CycleTime,
-                            LastError = ex,
-                        };
-                        GuiUpdate?.Invoke(this, state);
-                    }
+
                 }
                 finally
                 {
@@ -272,9 +356,14 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                     Debugging.Step();
 
 
+
+
                 if (dtMeasure != DT_LastMeasure) //keep only unique entries!
                 {
-                    measures.Add(new MeasureEntry(dtMeasure, diskTime, ioReadMBS, cpuusage));
+                    bool notresponding = true;
+                    if (_TP != null)
+                        notresponding = _TP.IsNotResponding;
+                    measures.Add(new MeasureEntry(dtMeasure, diskTime, ioReadMBS, cpuusage, notresponding));
                     DT_LastMeasure = dtMeasure;
                 }
             }
@@ -284,23 +373,25 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             }
         }
 
-
+        private Pulser Pulser = new Pulser(TimeSpan.FromMilliseconds(1100));
+        private bool Pulser_Value=false;
         private void Thread_Execute_Sub()
         {
+            if (Pulser.IsHigh != Pulser_Value)
+            {
+                Pulser_Value = Pulser.IsHigh;
+#if DEBUG2
+                Trace.WriteLine($"{DateTime.Now:HH:mm:ss:fff} Pulser: {Pulser_Value}");
+#endif
+            }
+
             var processes = ProcessEx.GetProcessesByName(POE_ExeNames);
             if (processes.Length == 0)
             {
                 Debugging.Step();
                 ClearCounters();
                 _TP = null;
-                var state = new State(null)
-                {
-                    CycleTime = this.CycleTime,
-                };
-
-
-
-                GuiUpdate?.Invoke(this, state);
+                DoGuiUpdate();
                 return;
             }
             //found
@@ -315,7 +406,6 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             {
                 _TP.Update(process);
             }
-
             Thread_Execute_PFC();
 
 
@@ -365,7 +455,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                                     _TP.iSetLimit2 = fileContents.LastIndexOf(sSetLimit2);
 
                                     bool goOn = true;
-                                    if (usedConfig.IsAutolimit_until1stLevel)
+                                    if (usedConfig.IsAutolimit_pulselimit_until1stLevel)
                                     {
                                         if (_TP.StartTime > this.StartTime)
                                         {
@@ -387,9 +477,21 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                                                 }
                                                 else
                                                 {
-                                                    //stay in limiting, until 1st level loaded
+                                                    //stay here until 1st level loaded
                                                     goOn = false;
-                                                    condition_value = 1;
+
+                                                    //starts when loading instance!
+
+                                                    //one of both...
+                                                    bool pre_condition_value=false;
+                                                    if (_TP.iSetLimit1 > _TP.iResetLimit)
+                                                        pre_condition_value = true;
+                                                    if (_TP.iSetLimit2 > _TP.iResetLimit)
+                                                        pre_condition_value = true;
+
+                                                    if(pre_condition_value)
+                                                        condition_value = Pulser_Value ? 1 : 0;
+
                                                 }
                                             }
                                         }
@@ -447,7 +549,12 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                                 swLimitToNormalDelaySW.Start();
                             }
 
-                            if (swLimitToNormalDelaySW.Elapsed.TotalSeconds >= usedConfig.LimitToNormalDelaySecs)
+                            if (usedConfig.IsAutolimit_pulselimit_until1stLevel && !_TP.IsFirstLevelLoaded)
+                            {
+                                process.ProcessorAffinity = af_normal;
+                                swLimitToNormalDelaySW = null;
+                            }
+                            else if (swLimitToNormalDelaySW.Elapsed.TotalSeconds >= usedConfig.LimitToNormalDelaySecs)
                             {
                                 process.ProcessorAffinity = af_normal;
                                 swLimitToNormalDelaySW = null;
@@ -467,39 +574,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
 
 
-            if (swTimeoutGUI.Elapsed.TotalMilliseconds > ThreadGuiUpdateMs)
-            {
-                //update GUI
-                TimeSpan? timetoResetLimit = null;
-                if (swLimitToNormalDelaySW != null)
-                {
-                    var diff = usedConfig.LimitToNormalDelaySecs - swLimitToNormalDelaySW.Elapsed.TotalSeconds;
-                    if (diff > 0)
-                    {
-                        timetoResetLimit = TimeSpan.FromSeconds(diff);
-                    }
-                }
-
-
-
-                var state = new State(_TP)
-                {
-                    CycleTime = this.CycleTime,
-                    MeasureEntries = measures.ToArray(),
-                    PfcException = ExceptionPFC,
-                };
-                measures.Clear();
-
-                if (timetoResetLimit != null)
-                {
-                    state.LimitCaption += $"Reset Limit in: {timetoResetLimit.Value.TotalSeconds:n1} sec";
-                }
-
-
-
-                GuiUpdate?.Invoke(this, state);
-                swTimeoutGUI.Restart();
-            }
+            DoGuiUpdate();
 
         }
 

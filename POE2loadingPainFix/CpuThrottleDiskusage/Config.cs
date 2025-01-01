@@ -22,7 +22,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         public string LimitToNormalDelaySecsCaption => $"{LimitToNormalDelaySecs:N1} secs";
         public LimitKind LimitKind { get; set; } = LimitKind.ViaClientLog;
 
-        public bool IsAutolimit_until1stLevel { get; set; } = true;
+        public bool IsAutolimit_pulselimit_until1stLevel { get; set; } = true;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -34,8 +34,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                 InLimitAffinity = this.InLimitAffinity,
                 LimitKind = this.LimitKind,
                 LimitToNormalDelaySecs = this.LimitToNormalDelaySecs,
-                IsAutolimit_until1stLevel = this.IsAutolimit_until1stLevel,
-
+                IsAutolimit_pulselimit_until1stLevel = this.IsAutolimit_pulselimit_until1stLevel,
             };
             return res;
             

@@ -24,7 +24,7 @@ namespace POE2loadingPainFix
     /// </summary>
     public partial class MainWindow : MetroWindow, INotifyPropertyChanged
     {
-        public string Version = "0.7";
+        public string Version = "0.8";
 
         /// <summary>
         /// https://stackoverflow.com/questions/54848286/performancecounter-physicaldisk-disk-time-wrong-value
@@ -45,6 +45,9 @@ namespace POE2loadingPainFix
 
         public Visibility VisLoadingLevel => State != null && State.TargetProcess != null && State.TargetProcess.IsCpuLimited ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisNormal => State != null && State.TargetProcess != null && !State.TargetProcess.IsCpuLimited ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility VisNotResponding => State != null && State.TargetProcess != null && State.TargetProcess.IsNotResponding ? Visibility.Visible : Visibility.Collapsed;
+        
 
         public Visibility VisError => ShortException!="" ? Visibility.Visible : Visibility.Collapsed;
 
@@ -77,6 +80,7 @@ namespace POE2loadingPainFix
         private readonly List<DateTimePoint> _CpuValues = [];
         private readonly List<DateTimePoint> _IOReadValues = [];
         private readonly List<DateTimePoint> _LimitedValues = [];
+        private readonly List<DateTimePoint> _NotRespondingValues = [];
 
         private readonly DateTimeAxis _customAxis;
 
@@ -155,7 +159,18 @@ namespace POE2loadingPainFix
                 GeometryFill = null,
                 GeometryStroke = null
             },
+                        new LineSeries<DateTimePoint>
+            {
+                Values = _NotRespondingValues,
+                Fill = null,
+                Stroke = new SolidColorPaint(SKColors.Yellow) { StrokeThickness = 3 },
 
+                Name="Not-Responding",
+                GeometryFill = null,
+                GeometryStroke = null
+            },
+
+            
 
             ];
 
@@ -286,6 +301,8 @@ namespace POE2loadingPainFix
             OnPropertyChanged(nameof(VisWaitingExe));
             OnPropertyChanged(nameof(VisLoadingLevel));
             OnPropertyChanged(nameof(VisNormal));
+            OnPropertyChanged(nameof(VisNotResponding));
+            
             OnPropertyChanged(nameof(State));
 
             if(State.LastError != null)
@@ -331,6 +348,9 @@ namespace POE2loadingPainFix
                     _IOReadValues.AddRange(State.MeasureEntries.Select(x => new DateTimePoint(x.DT, x.IORead)));
                     _IOReadValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
 
+                    _NotRespondingValues.AddRange(State.MeasureEntries.Select(x => new DateTimePoint(x.DT, x.NotResponding?100d:0d )));
+                    _NotRespondingValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+                    
 
                     //smmothen cpu...
                     IEnumerable<DateTimePoint> cpuvals;

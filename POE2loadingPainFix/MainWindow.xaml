@@ -36,6 +36,9 @@
                     <Viewbox Visibility="{Binding VisNormal}">
                         <Label Background="Lime" FontSize="20" Content="POE2 CPU Normal"/>
                     </Viewbox>
+                    <Viewbox Visibility="{Binding VisNotResponding}">
+                        <Label Background="Yellow" Foreground="Black" FontSize="20" Content="POE2 not responding"/>
+                    </Viewbox>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal">
@@ -72,16 +75,18 @@
                 </GroupBox>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="50*"/>
+                        <ColumnDefinition Width="250"/>
                         <ColumnDefinition Width="50*"/>
                     </Grid.ColumnDefinitions>
                     <Border Margin="5,5,5,5">
                         <CheckBox FontSize="20" Content="Update graphs" IsChecked="{Binding IsUpdateGraphs}"/>
                     </Border>
-                    <StackPanel  Grid.Column="1" Orientation="Vertical">
-                        <CheckBox FontSize="20" Content="(only Auto-Limit), POE2-Startup limiting " IsChecked="{Binding AppConfig.ThrottleConfig.IsAutolimit_until1stLevel}"/>
-                        <Label FontSize="16" Content="when starting POE2, it will be limited until 1st level" FontStyle="Italic"/>
-                    </StackPanel>
+                    <Border Grid.Column="1">
+                        <StackPanel   Orientation="Vertical">
+                            <CheckBox FontSize="20" Content="(only Auto-Limit), POE2-Startup pulse-limiting " IsChecked="{Binding AppConfig.ThrottleConfig.IsAutolimit_pulselimit_until1stLevel}"/>
+                            <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="POE2LoadingPainFix needs to be started before POE2. When starting POE2, it will be pulsed-limited (on/off) until 1st level. This should prevend POE2-NotResponding during startup, but should prevent Full-Freeze" FontStyle="Italic"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
 
                 <GroupBox Header="Performance graphs">

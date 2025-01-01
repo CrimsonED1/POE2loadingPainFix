@@ -6,13 +6,15 @@
         public double DiskUsage { get; }
         public double IORead { get; }
 
+        public bool NotResponding { get; }
         public double CpuUsage { get; }
-        public MeasureEntry(DateTime dT, double diskUsage, double iORead,double cpuusage)
+        public MeasureEntry(DateTime dT, double diskUsage, double iORead,double cpuusage,bool notResponding)
         {
             DT = dT;
             DiskUsage = diskUsage;
             IORead = iORead;
             CpuUsage = cpuusage;
+            NotResponding = notResponding;
         }
 
     }
