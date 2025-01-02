@@ -1,41 +1,20 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
-using static System.Net.WebRequestMethods;
 
 
 namespace POE2loadingPainFix.CpuThrottleDiskusage
 {
-
-    public class Pulser
+    public enum LimitMode
     {
-        public TimeSpan Time { get; }
-        private Stopwatch StopWatch { get; }
-
-        public Pulser(TimeSpan pulseTime)
-        {
-            Time = pulseTime;
-            StopWatch = new Stopwatch();
-            StopWatch.Start();
-        }
-
-        private bool _IsHigh = false;
-        public bool IsHigh
-        {
-            get
-            {
-                if (StopWatch.Elapsed > Time)
-                {
-                    _IsHigh = !_IsHigh;
-                    StopWatch.Restart();
-                }
-                return _IsHigh;
-            }
-        }
+        Off,
+        On,
+        PartialOff
     }
 
     public class Throttler
     {
+
         object SyncRoot = new object();
         Thread? Thread;
         bool Terminate = false;
@@ -45,11 +24,16 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         PerformanceCounter? CPU_Total_Counter;
         public event EventHandler<State>? GuiUpdate;
 
+        private Pulser Pulser;
+        private bool Pulser_High = false;
+
         //########################################
 
         public Throttler(Config config)
         {
             Config = config;
+            usedConfig = Config;
+            Pulser = new Pulser(TimeSpan.FromSeconds(Config.Autolimit_pulse_High_Secs), TimeSpan.FromSeconds(Config.Autolimit_pulse_Low_Secs));
         }
 
         public void UpdateConfig(Config newConfig)
@@ -57,6 +41,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             lock (SyncRoot)
             {
                 Config = newConfig;
+                Pulser = new Pulser(TimeSpan.FromSeconds(Config.Autolimit_pulse_High_Secs), TimeSpan.FromSeconds(Config.Autolimit_pulse_Low_Secs));
             }
         }
 
@@ -138,6 +123,8 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
         Config usedConfig;
 
         List<MeasureEntry> measures = new List<MeasureEntry>(10000);
+        List<LimitedEntry> limits = new List<LimitedEntry>(10000);
+        
 
         DateTime DT_LastMeasure = DateTime.Now;
 
@@ -183,15 +170,23 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                         CycleTime = this.CycleTime,
                         MeasureEntries = measures.ToArray(),
                         PfcException = ExceptionPFC,
+                        LimitEntries = limits.ToArray(),
                     };
                     measures.Clear();
+                    limits.Clear();
 
                     if (timetoResetLimit != null)
                     {
                         state.LimitCaption += $"Reset Limit in: {timetoResetLimit.Value.TotalSeconds:n1} sec";
                     }
 
-         
+                    if(_TP!=null && _TP.LogFile_InitialRun)
+                    {
+                        state.LimitCaption = "Startup, waiting for logfile changes";
+                    }
+                    
+
+
                 }
 
                 if (!IsGuiTaskActive)
@@ -207,6 +202,10 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
         }
 
+
+        DateTime DT_Cylcle = DateTime.Now;
+        DateTime DT_LastCylce = DateTime.Now.AddMinutes(-1);
+        
         private void Thread_Execute(object? sender)
         {
 
@@ -226,7 +225,9 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
                 try
                 {
+                    DT_Cylcle = DateTime.Now;
                     Thread_Execute_Sub();
+                    DT_LastCylce = DT_Cylcle;
                 }
                 catch (Exception ex)
                 {
@@ -244,7 +245,11 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 #endif
                 }
 
-                Thread.Sleep(100);
+                //Slow when POE2 started, fast when its not!
+                if(_TP!=null)
+                    Thread.Sleep(100);
+                else
+                    Thread.Sleep(1);
 
             }//while
 
@@ -334,7 +339,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             {
                 Thread_Execute_InitCounters();
 
-                DateTime dtMeasure = DateTime.Now;
+                
 
                 double ioReadMBS = 0;
 
@@ -362,13 +367,10 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
 
 
-                if (dtMeasure != DT_LastMeasure) //keep only unique entries!
+                if (DT_Cylcle != DT_LastMeasure) //keep only unique entries!
                 {
-                    bool notresponding = true;
-                    if (_TP != null)
-                        notresponding = _TP.IsNotResponding;
-                    measures.Add(new MeasureEntry(dtMeasure, diskTime, ioReadMBS, cpuusage, notresponding));
-                    DT_LastMeasure = dtMeasure;
+                    measures.Add(new MeasureEntry(DT_Cylcle, diskTime, ioReadMBS, cpuusage));
+                    
                 }
             }
             catch (Exception ex)
@@ -377,17 +379,129 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             }
         }
 
-        private Pulser Pulser = new Pulser(TimeSpan.FromMilliseconds(1100));
-        private bool Pulser_Value=false;
+        private ProcessPriorityClass Limited_PriorityClass = ProcessPriorityClass.BelowNormal;
+
+        private void SetLimit(Process process, LimitMode limited)
+        {
+            if (_TP == null)
+                return;
+
+
+            switch (limited)
+            {
+                case LimitMode.On:
+                    _TP.IsLimitedByApp = true;
+
+                    if (usedConfig.IsLimit_SetAffinity)
+                    {
+                        //nint af_cur = process.ProcessorAffinity;
+                        nint af_limited = CpuTools.GetProcessorAffinity(usedConfig.InLimitAffinity);
+
+                        if (process.ProcessorAffinity != af_limited)
+                            process.ProcessorAffinity = af_limited;
+                    }
+
+                    if (usedConfig.IsLimit_RemovePrioBurst)
+                    {
+                        var cur_prio = process.PriorityBoostEnabled;
+                        if (cur_prio != false)
+                        {
+                            process.PriorityBoostEnabled = false;
+                        }
+                    }
+
+                    if (usedConfig.IsLimit_PrioLower)
+                    {
+                        var cur_prio = process.PriorityClass;
+                        if (cur_prio != Limited_PriorityClass)
+                        {
+                            process.PriorityClass = Limited_PriorityClass;
+                        }
+                    }
+
+                    break;
+                case LimitMode.Off:
+                    _TP.IsLimitedByApp = false;
+
+                    if (usedConfig.IsLimit_SetAffinity)
+                    {
+                        nint af_normal = CpuTools.GetProcessorAffinity();
+                        if (process.ProcessorAffinity != _TP.Orginal_Affinity)
+                        {
+                            process.ProcessorAffinity = _TP.Orginal_Affinity;
+                        }
+                    }
+
+                    if (usedConfig.IsLimit_RemovePrioBurst)
+                    {
+                        var cur_prio = process.PriorityBoostEnabled;
+
+                        bool usedValue = _TP.Orginal_PriorityBoostEnabled;
+                        if (cur_prio != usedValue)
+                        {
+                            process.PriorityBoostEnabled = usedValue;
+                        }
+                    }
+
+                    if (usedConfig.IsLimit_PrioLower)
+                    {
+                        ProcessPriorityClass usedValue = _TP.Orginal_PriortyClass;
+                        var cur_prio = process.PriorityClass;
+                        if (cur_prio != usedValue)
+                        {
+                            process.PriorityClass = usedValue;
+                        }
+                    }
+
+
+                    break;
+                case LimitMode.PartialOff:
+
+                    _TP.IsLimitedByApp = true;
+
+                    if (usedConfig.IsLimit_SetAffinity)
+                    {
+                        var usedValue = _TP.Orginal_Affinity;
+                        var cur_aff = _TP.Current_Affinity;
+                        if (cur_aff != usedValue)
+                        {
+                            process.ProcessorAffinity = usedValue;
+                        }
+                    }
+
+                    if (usedConfig.IsLimit_RemovePrioBurst)
+                    {
+                        var cur_prio = _TP.Current_PriorityBoostEnabled;
+                        bool usedValue = false;
+                        if (cur_prio != usedValue)
+                        {
+                            process.PriorityBoostEnabled = usedValue;
+                        }
+                    }
+
+                    if (usedConfig.IsLimit_PrioLower)
+                    {
+                        ProcessPriorityClass usedValue = this.Limited_PriorityClass;
+                        var cur_prio = _TP.Current_PriortyClass; 
+                        if (cur_prio != usedValue)
+                        {
+                            process.PriorityClass = usedValue;
+                        }
+                    }
+
+                    break;
+                default:
+                    throw new NotImplementedException();
+
+            }
+
+
+        }
+
         private void Thread_Execute_Sub()
         {
-            if (Pulser.IsHigh != Pulser_Value)
-            {
-                Pulser_Value = Pulser.IsHigh;
-#if DEBUG2
-                Trace.WriteLine($"{DateTime.Now:HH:mm:ss:fff} Pulser: {Pulser_Value}");
-#endif
-            }
+            Pulser_High = Pulser.IsHigh;
+
 
             var processes = ProcessEx.GetProcessesByName(POE_ExeNames);
             if (processes.Length == 0)
@@ -403,174 +517,196 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 
 
 
+            
+            
+
             //onetime Init!
             if (_TP == null)
-                _TP = new TargetProcess(process);
-            else
             {
+                _TP = new TargetProcess(process, StartTime);
+
+                if(usedConfig.LimitKind== LimitKind.ViaClientLog)
+                {
+#if DEBUG
+                    Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - STARTUP!");
+                    Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - process.StartTime {process.StartTime.ToFullDT_German()}");
+#endif
+                    SetLimit(process, LimitMode.On);
+                    Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - LIMIT DONE!");
+
+                    FileInfo fn = new FileInfo(_TP.POE2_LogFile);
+                    _TP.LogFile_StartupLength = fn.Length;
+                    _TP.LogFile_InitialRun = true;
+                }
+            }
+            else
+            {                
                 _TP.Update(process);
             }
             Thread_Execute_PFC();
 
+            var limitMode = LimitMode.PartialOff; //prio to PARTIAL OFF!!!, after startup...
 
 
 
-            if (process != null)
+            if (_TP!=null && process != null)
             {
-                nint af_cur = process.ProcessorAffinity;
-                nint af_normal = CpuTools.GetProcessorAffinity();
-                nint af_limited = CpuTools.GetProcessorAffinity(usedConfig.InLimitAffinity);
                 Debugging.Step();
                 switch (usedConfig.LimitKind)
                 {
                     case LimitKind.AlwaysOff:
-                        if (process.ProcessorAffinity != af_normal)
-                        {
-                            process.ProcessorAffinity = af_normal;
-                        }
+                        SetLimit(process, LimitMode.Off);
                         break;
                     case LimitKind.AlwaysOn:
-                        if (process.ProcessorAffinity != af_limited)
-                        {
-                            process.ProcessorAffinity = af_limited;
-                        }
+                        SetLimit(process, LimitMode.On);
                         break;
                     case LimitKind.ViaClientLog:
 
+                        var sResetLimit = "[SHADER] Delay: ON";
+                        var sSetLimit1 = "Got Instance Details from login server";
+                        var sSetLimit2 = "[SHADER] Delay: OFF";
 
-                        double condition;
-                        double condition_value;
-                        //Conditions...
-                        switch (usedConfig.LimitKind)
+
+                        try
                         {
-                            case LimitKind.ViaClientLog:
-                                var sResetLimit = "[SHADER] Delay: ON";
-                                var sSetLimit1 = "Got Instance Details from login server";
-                                var sSetLimit2 = "[SHADER] Delay: OFF";
 
-                                condition_value = 0;
-                                condition = 1;
-                                try
+                            if (_TP.LogFile_InitialRun)
+                            {
+                                //waiting log changed...
+                                FileInfo fn = new FileInfo(_TP.POE2_LogFile);
+                                if (fn.Length != _TP.LogFile_StartupLength || !_TP.IsStartedAfterFix)
                                 {
-                                    string fileContents = ReadTail(_TP.POE2_LogFile, 20000);
+                                    _TP.LogFile_InitialRun = false;
+#if DEBUG
+                                    Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} Startup, Logfile changed!");
+#endif
+                                    if (_TP.IsStartedAfterFix)
+                                    {
+                                        SetLimit(process, LimitMode.PartialOff);
+                                    }
+                                    else
+                                    {
+                                        SetLimit(process, LimitMode.Off);
+                                    }
 
-                                    _TP.iResetLimit = fileContents.LastIndexOf(sResetLimit);
-                                    _TP.iSetLimit1 = fileContents.LastIndexOf(sSetLimit1);
-                                    _TP.iSetLimit2 = fileContents.LastIndexOf(sSetLimit2);
 
-                                    bool goOn = true;
+                                }
+                                else
+                                {
+
+                                    //POE2, has not added log...
+#if DEBUG
+                                    Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} Startup, waiting for new lines in logfile...");
+#endif
+                                }
+                            }
+                            else
+                            {
+                                //normal
+                                string fileContents = ReadTail(_TP.POE2_LogFile, 20000);
+
+
+
+                                _TP.Pos_ResetLimit = fileContents.LastIndexOf(sResetLimit);
+                                _TP.Pos_SetLimit1 = fileContents.LastIndexOf(sSetLimit1);
+                                _TP.Pos_SetLimit2 = fileContents.LastIndexOf(sSetLimit2);
+
+                                int[] allConditions = [_TP.Pos_ResetLimit, _TP.Pos_SetLimit1, _TP.Pos_SetLimit2];
+                                bool allUnset = allConditions.All(x => x == -1);
+
+                                if (!allUnset)
+                                {
+
+                                    if (_TP.Pos_ResetLimit > _TP.Pos_SetLimit1 && _TP.Pos_ResetLimit > _TP.Pos_SetLimit2)
+                                    {
+                                        //not limiting...
+                                        limitMode = LimitMode.Off;
+                                    }
+                                    else
+                                    {
+                                        //one of both...
+                                        if (_TP.Pos_SetLimit1 > _TP.Pos_ResetLimit)
+                                            limitMode = LimitMode.On;
+                                        if (_TP.Pos_SetLimit2 > _TP.Pos_ResetLimit)
+                                            limitMode = LimitMode.On;
+                                    }
+                                    Debugging.Step();
+
+                                    //Pulse
                                     if (usedConfig.IsAutolimit_pulse_limit)
                                     {
-                                        if (_TP.StartTime > this.StartTime)
+                                        if (limitMode == LimitMode.On)
                                         {
-                                            if (!_TP.IsFirstLevelLoaded)
-                                            {
-                                                //init
-                                                if (_TP.iResetLimit_StartTime == null)
-                                                {
-                                                    //keep the last position for reset, and ignore this one...
-                                                    _TP.iResetLimit_StartTime = _TP.iResetLimit;
-                                                }
-
-                                                //condition, after loaded a map...
-                                                if (_TP.iResetLimit > _TP.iResetLimit_StartTime)
-                                                {
-                                                    //release limit
-                                                    condition_value = 0;
-                                                    _TP.IsFirstLevelLoaded = true;
-                                                }
-                                                else
-                                                {
-                                                    //stay here until 1st level loaded
-                                                    goOn = false;
-
-                                                    //starts when loading instance!
-
-                                                    //one of both...
-                                                    bool pre_condition_value=false;
-                                                    if (_TP.iSetLimit1 > _TP.iResetLimit)
-                                                        pre_condition_value = true;
-                                                    if (_TP.iSetLimit2 > _TP.iResetLimit)
-                                                        pre_condition_value = true;
-
-                                                    if(pre_condition_value)
-                                                        condition_value = Pulser_Value ? 1 : 0;
-
-                                                }
-                                            }
+                                            if (Pulser_High)
+                                                limitMode = LimitMode.PartialOff;
                                         }
-                                    }
+                                    }//pulse
+                                }//! all unset...
 
-                                    if (goOn)
-                                    {
-                                        if (_TP.iResetLimit > _TP.iSetLimit1 && _TP.iResetLimit > _TP.iSetLimit2)
-                                        {
-                                            //not limiting...
-                                            condition_value = 0;
-                                        }
-                                        else
-                                        {
-                                            //one of both...
-                                            if (_TP.iSetLimit1 > _TP.iResetLimit)
-                                                condition_value = 1;
-                                            if (_TP.iSetLimit2 > _TP.iResetLimit)
-                                                condition_value = 1;
-                                        }
-                                    }
-                                    Debugging.Step();
+                            }//
+                        }
+                        catch
+                        (Exception ex)
+                        {
+                            Trace.WriteLine(ex.Message);
+                            Debugging.Step();
+                        }
+
+                        //Trace.WriteLine($"condition_value: {condition_value}");
 
 
-                                }
-                                catch
-                                (Exception ex)
+                        switch (limitMode)
+                        {
+                            case LimitMode.On:
+                                swLimitToNormalDelaySW = null;
+                                SetLimit(process, LimitMode.On);
+
+                                Debugging.Step();
+                                break;
+                            case LimitMode.PartialOff:
+                                SetLimit(process, LimitMode.PartialOff);
+                                swLimitToNormalDelaySW = null;
+                                break;
+                            case LimitMode.Off:
+                                if (swLimitToNormalDelaySW == null)
                                 {
-                                    Trace.WriteLine(ex.Message);
-                                    Debugging.Step();
+                                    swLimitToNormalDelaySW = new Stopwatch();
+                                    swLimitToNormalDelaySW.Start();
+                                }
+
+                                if (swLimitToNormalDelaySW != null && swLimitToNormalDelaySW.Elapsed.TotalSeconds >= usedConfig.LimitToNormalDelaySecs)
+                                {
+                                    //will be called multiple times!!!
+                                    SetLimit(process, LimitMode.Off);
+#if DEBUG
+                                    Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} ResetLimit");
+#endif
                                 }
                                 break;
-
-
-                            //##############################
                             default:
                                 throw new NotImplementedException();
                         }
 
-
-                        //Trace.WriteLine($"condition_value: {condition_value}");
-
-                        if (condition_value >= condition)
-                        {
-                            swLimitToNormalDelaySW = null;
-                            if (process.ProcessorAffinity != af_limited)
-                                process.ProcessorAffinity = af_limited;
-                            Debugging.Step();
-                        }
-                        else if (process.ProcessorAffinity == af_limited)
-                        {
-                            if (swLimitToNormalDelaySW == null)
-                            {
-                                swLimitToNormalDelaySW = new Stopwatch();
-                                swLimitToNormalDelaySW.Start();
-                            }
-
-                            if (usedConfig.IsAutolimit_pulse_limit && !_TP.IsFirstLevelLoaded)
-                            {
-                                process.ProcessorAffinity = af_normal;
-                                swLimitToNormalDelaySW = null;
-                            }
-                            else if (swLimitToNormalDelaySW.Elapsed.TotalSeconds >= usedConfig.LimitToNormalDelaySecs)
-                            {
-                                process.ProcessorAffinity = af_normal;
-                                swLimitToNormalDelaySW = null;
-                            }
-                        }
                         break;
                     default:
                         throw new ThrottlerCriticalException($"N/A {usedConfig.LimitKind}");
+                }//switch kind
+
+                //_TP.Update(process);
+
+                if (DT_Cylcle != DT_LastCylce) //keep only unique entries!
+                {
+                    bool notresponding = true;
+                    if (_TP != null)
+                        notresponding = _TP.IsNotResponding;
+
+                    limits.Add(new LimitedEntry(DT_Cylcle, _TP!.Current_Affinity_Percent, _TP.IsLimitedByApp,notresponding));
+
                 }
 
-                _TP.Update(process);
-            }
+            }//process!=null
+
+
 
 
 

@@ -30,7 +30,7 @@
                             <Label Background="Cyan" Foreground="Black" FontSize="20" Content="{Binding PoeExes}"/>
                         </StackPanel>
                     </Viewbox>
-                    <Viewbox Visibility="{Binding VisLoadingLevel}">
+                    <Viewbox Visibility="{Binding VisLimited}">
                         <Label Background="Red" Foreground="White" FontSize="20" Content="POE2 CPU Limited!"/>
                     </Viewbox>
                     <Viewbox Visibility="{Binding VisNormal}">
@@ -41,23 +41,30 @@
                     </Viewbox>
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Vertical">
                     <StackPanel.Resources>
                         <Style TargetType="Label">
                             <Setter Property="FontSize" Value="20"/>
                         </Style>
                     </StackPanel.Resources>
-                    <Label Content="PID: "/>
-                    <Label Content="{Binding State.TargetProcess.PID}"/>
-                    <Label Content="Affinity: "/>
-                    <Label Content="{Binding State.TargetProcess.AffinityCaption}"/>
+                    <StackPanel Orientation="Horizontal">
 
+                        <Label Content="PID: "/>
+                        <Label Content="{Binding State.TargetProcess.PID}"/>
+                        <Label Content="Affinity: "/>
+                        <Label Content="{Binding State.TargetProcess.AffinityCaption}"/>
+                        <Label Content="Priority: "/>
+                        <Label Content="{Binding State.TargetProcess.Current_PriortyClass}"/>
+                        <Label Content="PriorityBoostEnabled: "/>
+                        <Label Content="{Binding State.TargetProcess.Current_PriorityBoostEnabled}"/>
+
+                    </StackPanel>
                     <Label Content="{Binding State.LimitCaption}" FontStyle="Italic"/>
                 </StackPanel>
 
                 <GroupBox Header="Limit Kind" FontSize="22">
-                    <Viewbox HorizontalAlignment="Left">
-                        <UniformGrid Rows="2" Columns="2">
+                    <Viewbox HorizontalAlignment="Left" Height="70">
+                        <UniformGrid Rows="2" Columns="2" >
                             <UniformGrid.Resources>
                                 <Style TargetType="RadioButton">
                                     <Setter Property="FontSize" Value="10"/>
@@ -73,20 +80,125 @@
 
                     </Viewbox>
                 </GroupBox>
-                <GroupBox Header="Auto-Limit Settings">
+
+                <GroupBox Header="Performance graphs">
                     <StackPanel>
                         <Border Margin="5,5,5,5">
+                            <CheckBox FontSize="15" Content="Update graphs" IsChecked="{Binding IsUpdateGraphs}"/>
+                        </Border>
+
+                        <StackPanel Orientation="Vertical" Visibility="{Binding VisPfcError}">
+                            <Label Background="Yellow" FontSize="20" Content="PFC-Exception (no impact on POE2-CPU-limitations!)" Foreground="Black"/>
+                            <Label Background="Yellow" FontSize="20" Content="{Binding ShortPfcException}" Foreground="Black"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="CPU Usage (PFC: % Total):" FontSize="15"/>
+                            <Label Content="{Binding State.CpuUsageCaption}" FontSize="15"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Disk Usage (PFC: % Disk Read Total):" FontSize="15"/>
+                            <Label Content="{Binding State.DiskUsageCaption}" FontSize="15"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="POE2 Usage (PFC: IO Read MBytes/sec):" FontSize="15"/>
+                            <Label Content="{Binding State.IOReadCaption}" FontSize="15"/>
+                        </StackPanel>
+
+                        <Border Height="200">
+                            <lvc:CartesianChart
+            SyncContext="{Binding SyncRoot}"
+            Series="{Binding Series}"
+            XAxes="{Binding XAxes}" LegendPosition="Right" LegendBackgroundPaint="{Binding LedgendBackgroundPaint}"
+LegendTextPaint="{Binding LegendTextPaint}">
+
+                            </lvc:CartesianChart>
+                        </Border>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Limit Settings">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="CPU:"/>
+                            <Label Content="{Binding CpuCaption}"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Logical Processors:"/>
+                            <Label Content="{Binding CPUs}"/>
+                        </StackPanel>
+                        
+                        <Border Margin="5,5,5,5">
                             <StackPanel   Orientation="Vertical">
-                                <CheckBox FontSize="20" Content="POE2 startup pulse-limiting " IsChecked="{Binding AppConfig.ThrottleConfig.IsAutolimit_pulselimit_until1stLevel}"/>
-                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="POE2LoadingPainFix needs to be started before POE2. When starting POE2, it will be pulsed-limited (on/off) until 1st level. This should prevend POE2-NotResponding during startup, but should prevent Full-Freeze" FontStyle="Italic"/>
+                                <CheckBox FontSize="20" Content="POE2 set affinity to selection " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_SetAffinity}"/>
+                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="If limited, use this logical processors" FontStyle="Italic"/>
+                                <Expander Header="POE2 CPU - Limited Affinity" IsExpanded="false">
+                                    <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}" MaxHeight="200">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <CheckBox Content="{Binding Caption}" IsChecked="{Binding IsSet}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Expander>
+                            </StackPanel>
+                        </Border>
+                        <Border Margin="5,5,5,5" >
+                            <StackPanel   Orientation="Vertical">
+                                <CheckBox FontSize="20" Content="POE2 pulse-limiting " IsChecked="{Binding AppConfig.ThrottleConfig.IsAutolimit_pulse_limit}"/>
+                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="When POE2 is loading intances, it will be pulsed-limited (on/off) until loaded." FontStyle="Italic"/>
+                            </StackPanel>
+                        </Border>                        
+                        <Border Margin="5,5,5,5">
+                            <StackPanel   Orientation="Vertical">
+                                <CheckBox FontSize="20" Content="Remove Priorty Boost " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_RemovePrioBurst}"/>
+                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="Remove CPU PriorityBoostEnabled (Always set on POE2)." FontStyle="Italic"/>
+                                <TextBlock><Hyperlink NavigateUri="https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.priorityboostenabled">MS-Doc PriorityBoostEnabled </Hyperlink></TextBlock>
+                            </StackPanel>
+                        </Border>
+                        <Border Margin="5,5,5,5">
+                            <StackPanel   Orientation="Vertical">
+                                <CheckBox FontSize="20" Content="Set POE2 Priorty to LowerNormal" IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_PrioLower}"/>
+                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="Most processes have normal. But LowerNormal should result in lower CPU usage" FontStyle="Italic"/>
                             </StackPanel>
                         </Border>
                         <Border Height="20"/>
+
+                        <StackPanel>
+                            <Border>
+                                <Grid Height="30">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="220"/>
+                                        <ColumnDefinition Width="53"/>
+                                        <ColumnDefinition Width="90*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label  Grid.Column="0" Content="Pulse Time (Affinity Normal)"/>
+                                    <Label  Grid.Column="1" Content="{Binding AppConfig.ThrottleConfig.Autolimit_pulse_High_SecsCaption}"/>
+                                    <Slider Grid.Column="2" Value="{Binding AppConfig.ThrottleConfig.Autolimit_pulse_High_Secs}" Minimum="0.1" Maximum="5"/>
+                                </Grid>
+                            </Border>
+                            <Border Height="10"/>
+
+                            <Border>
+                                <Grid Height="30">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="220"/>
+                                        <ColumnDefinition Width="53"/>
+                                        <ColumnDefinition Width="90*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label  Grid.Column="0" Content="Pulse Time (Affinity Limited)"/>
+                                    <Label  Grid.Column="1" Content="{Binding AppConfig.ThrottleConfig.Autolimit_pulse_Low_SecsCaption}"/>
+                                    <Slider Grid.Column="2" Value="{Binding AppConfig.ThrottleConfig.Autolimit_pulse_Low_Secs}" Minimum="0.1" Maximum="5"/>
+                                </Grid>
+                            </Border>
+                            <Border Height="10"/>
+                        </StackPanel>
                         <Border>
                             <Grid Height="30">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="auto"/>
-                                    <ColumnDefinition Width="10*"/>
+                                    <ColumnDefinition Width="220"/>
+                                    <ColumnDefinition Width="53"/>
                                     <ColumnDefinition Width="90*"/>
                                 </Grid.ColumnDefinitions>
                                 <Label  Grid.Column="0" Content="Delay reset affinity to normal"/>
@@ -109,61 +221,10 @@
                     </Border>
                 </Grid>
 
-                <GroupBox Header="Performance graphs">
-                    <StackPanel>
-                        <Border Margin="5,5,5,5">
-                            <CheckBox FontSize="20" Content="Update graphs" IsChecked="{Binding IsUpdateGraphs}"/>
-                        </Border>
-
-                        <StackPanel Orientation="Vertical" Visibility="{Binding VisPfcError}">
-                            <Label Background="Yellow" FontSize="20" Content="PFC-Exception (no impact on POE2-CPU-limitations!)" Foreground="Black"/>
-                            <Label Background="Yellow" FontSize="20" Content="{Binding ShortPfcException}" Foreground="Black"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="CPU Usage (PFC: % Total):" FontSize="20"/>
-                            <Label Content="{Binding State.CpuUsageCaption}" FontSize="20"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="Disk Usage (PFC: % Disk Read Total):" FontSize="20"/>
-                            <Label Content="{Binding State.DiskUsageCaption}" FontSize="20"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="POE2 Usage (PFC: IO Read MBytes/sec):" FontSize="20"/>
-                            <Label Content="{Binding State.IOReadCaption}" FontSize="20"/>
-                        </StackPanel>
-
-                        <Border Height="200">
-                            <lvc:CartesianChart
-                    SyncContext="{Binding SyncRoot}"
-                    Series="{Binding Series}"
-                    XAxes="{Binding XAxes}" LegendPosition="Right" LegendBackgroundPaint="{Binding LedgendBackgroundPaint}"
-        LegendTextPaint="{Binding LegendTextPaint}">
-                                
-                            </lvc:CartesianChart>
-                        </Border>
-                    </StackPanel>
-                </GroupBox>             
+                          
 
                
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="CPU:"/>
-                    <Label Content="{Binding CpuCaption}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Logical Processors:"/>
-                    <Label Content="{Binding CPUs}"/>
-                </StackPanel>
-                <GroupBox Header="POE2 CPU - Affinity (when limited)">
-                    <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}" MaxHeight="200">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox Content="{Binding Caption}" IsChecked="{Binding IsSet}"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </GroupBox>
+                
                 
             </StackPanel>
         </ScrollViewer>

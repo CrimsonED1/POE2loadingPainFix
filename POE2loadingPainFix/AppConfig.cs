@@ -9,8 +9,32 @@ using static System.Environment;
 
 namespace POE2loadingPainFix
 {
+    public enum AppConfigKind
+    {
+        Optimized,
+        Custom
+    }
+
     public class AppConfig : INotifyPropertyChanged
     {
+        private AppConfigKind _AppConfigKind = AppConfigKind.Optimized;
+        public AppConfigKind AppConfigKind
+        {
+            get=>_AppConfigKind;
+            set
+            {
+                if (_AppConfigKind == value) 
+                    return;
+                _AppConfigKind = value;
+
+                if(_AppConfigKind== AppConfigKind.Optimized)
+                {
+                    ThrottleConfig = new Config();
+                    Init();
+                }
+
+            }
+        }
         public Rect Window_Position { get; set; }
         public Config ThrottleConfig { get; set; }
 

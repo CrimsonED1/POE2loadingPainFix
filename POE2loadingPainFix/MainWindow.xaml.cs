@@ -42,10 +42,8 @@ namespace POE2loadingPainFix
         public string PoeExes => Throttler.POE_ExeNames.ToSingleString("/");
 
         public Visibility VisWaitingExe => State == null || (State != null && State.TargetProcess == null) ? Visibility.Visible : Visibility.Collapsed;
-
-        public Visibility VisLoadingLevel => State != null && State.TargetProcess != null && State.TargetProcess.IsCpuLimited ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility VisNormal => State != null && State.TargetProcess != null && !State.TargetProcess.IsCpuLimited ? Visibility.Visible : Visibility.Collapsed;
-
+        public Visibility VisNormal => State != null && State.TargetProcess != null && !State.TargetProcess.IsLimitedByApp ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility VisLimited => State != null && State.TargetProcess != null && State.TargetProcess.IsLimitedByApp ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisNotResponding => State != null && State.TargetProcess != null && State.TargetProcess.IsNotResponding ? Visibility.Visible : Visibility.Collapsed;
         
 
@@ -76,11 +74,12 @@ namespace POE2loadingPainFix
         public int CPUs { get; set; }
 
         public ObservableCollection<ISeries> Series { get; set; }
-        private readonly List<DateTimePoint> _DiskValues = [];
-        private readonly List<DateTimePoint> _CpuValues = [];
-        private readonly List<DateTimePoint> _IOReadValues = [];
-        private readonly List<DateTimePoint> _LimitedValues = [];
-        private readonly List<DateTimePoint> _NotRespondingValues = [];
+        private readonly List<DateTimePoint> _Values_Disk = [];
+        private readonly List<DateTimePoint> _Values_Cpu = [];
+        private readonly List<DateTimePoint> _Values_IORead = [];
+        private readonly List<DateTimePoint> _Values_Limited = [];
+        private readonly List<DateTimePoint> _Values_NotResponding = [];
+        private readonly List<DateTimePoint> _Values_Affinity = [];
 
         private readonly DateTimeAxis _customAxis;
 
@@ -124,7 +123,7 @@ namespace POE2loadingPainFix
             Series = [
             new LineSeries<DateTimePoint>
             {
-                Values = _DiskValues,
+                Values = _Values_Disk,
                 Fill = null,
                 Name="POE2-Disk (%)",
                 Stroke = new SolidColorPaint(SKColors.Blue) { StrokeThickness = 3 },
@@ -133,32 +132,43 @@ namespace POE2loadingPainFix
             },
             new LineSeries<DateTimePoint>
             {
-                Values = _CpuValues,
+                Values = _Values_Cpu,
                 Fill = null,
                 Name = "CPU (%)",
-                Stroke = new SolidColorPaint(SKColors.Green) { StrokeThickness = 1,Style=SKPaintStyle.StrokeAndFill },
+                Stroke = new SolidColorPaint(SKColors.Green) { StrokeThickness = 3},
                 GeometryFill = null,
                 GeometryStroke = null
             },
             new LineSeries<DateTimePoint>
             {
-                Values = _IOReadValues,
+                Values = _Values_IORead,
                 Fill = null,
-                Name = "I/O(MB/s)",
+                Name = "I/O (MB/s)",
                 Stroke = new SolidColorPaint(SKColors.Purple) { StrokeThickness = 3 },
                 GeometryFill = null,
                 GeometryStroke = null
             },
                         new LineSeries<DateTimePoint>
             {
-                Values = _LimitedValues,
+                Values = _Values_Limited,
                 Fill = null,
                 Stroke = new SolidColorPaint(SKColors.Red) { StrokeThickness = 3 },
 
-                Name="Limited",
+                Name="Limited (1/0)",
                 GeometryFill = null,
                 GeometryStroke = null
             },
+                        new LineSeries<DateTimePoint>
+            {
+                Values = _Values_Affinity,
+                Fill = null,
+                Stroke = new SolidColorPaint(SKColors.Yellow) { StrokeThickness = 3 },
+
+                Name="Affinity (%)",
+                GeometryFill = null,
+                GeometryStroke = null
+            },
+
             //            new LineSeries<DateTimePoint>
             //{
             //    Values = _NotRespondingValues,
@@ -299,7 +309,6 @@ namespace POE2loadingPainFix
             }
             State = e;
             OnPropertyChanged(nameof(VisWaitingExe));
-            OnPropertyChanged(nameof(VisLoadingLevel));
             OnPropertyChanged(nameof(VisNormal));
             OnPropertyChanged(nameof(VisNotResponding));
             
@@ -342,15 +351,14 @@ namespace POE2loadingPainFix
                 if (State.PfcException==null && State.MeasureEntries.Length > 0 && IsUpdateGraphs)
                 {
 
-                    _DiskValues.AddRange(State.MeasureEntries.Select(x => new DateTimePoint(x.DT, x.DiskUsage)));
-                    _DiskValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+                    _Values_Disk.AddRange(State.MeasureEntries.Select(x => new DateTimePoint(x.DT, x.DiskUsage)));
+                    _Values_Disk.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
 
-                    _IOReadValues.AddRange(State.MeasureEntries.Select(x => new DateTimePoint(x.DT, x.IORead)));
-                    _IOReadValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+                    _Values_IORead.AddRange(State.MeasureEntries.Select(x => new DateTimePoint(x.DT, x.IORead)));
+                    _Values_IORead.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
 
-                    _NotRespondingValues.AddRange(State.MeasureEntries.Select(x => new DateTimePoint(x.DT, x.NotResponding?100d:0d )));
-                    _NotRespondingValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
                     
+
 
                     //smmothen cpu...
                     IEnumerable<DateTimePoint> cpuvals;
@@ -364,21 +372,25 @@ namespace POE2loadingPainFix
 
                         cpuvals = new[] { /*new DateTimePoint(dtmin, median),*/ new DateTimePoint(dtmax, median) };
                     }
-                    _CpuValues.AddRange(cpuvals);
-                    _CpuValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+                    _Values_Cpu.AddRange(cpuvals);
+                    _Values_Cpu.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
 
 
 
                 } //measures..
-                double limitValueDisk = 0;
-                if (State.TargetProcess != null && State.TargetProcess.IsCpuLimited)
+
+                if (State.LimitEntries.Length > 0 && IsUpdateGraphs)
                 {
-                    limitValueDisk = 100;
+                    _Values_NotResponding.AddRange(State.LimitEntries.Select(x => new DateTimePoint(x.DT, x.NotResponding ? 100d : 0d)));
+                    _Values_NotResponding.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+
+                    _Values_Affinity.AddRange(State.LimitEntries.Select(x => new DateTimePoint(x.DT, x.AffinityPercent)));
+                    _Values_Affinity.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+
+
+                    _Values_Limited.AddRange(State.LimitEntries.Select(x => new DateTimePoint(x.DT, x.Limited? 100:0)));
+                    _Values_Limited.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
                 }
-
-                _LimitedValues.Add(new DateTimePoint(cur, limitValueDisk));
-                _LimitedValues.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
-
                 // we need to update the separators every time we add a new point 
                 _customAxis.CustomSeparators = GetSeparators();
 

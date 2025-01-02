@@ -1,29 +1,12 @@
 ﻿namespace POE2loadingPainFix.CpuThrottleDiskusage
 {
-    public class MeasureEntry
-    {
-        public DateTime DT { get;  }
-        public double DiskUsage { get; }
-        public double IORead { get; }
-
-        public bool NotResponding { get; }
-        public double CpuUsage { get; }
-        public MeasureEntry(DateTime dT, double diskUsage, double iORead,double cpuusage,bool notResponding)
-        {
-            DT = dT;
-            DiskUsage = diskUsage;
-            IORead = iORead;
-            CpuUsage = cpuusage;
-            NotResponding = notResponding;
-        }
-
-    }
 
     public class State
     {
         public TargetProcess? TargetProcess { get; }
 
         public MeasureEntry[] MeasureEntries { get; set; } = new MeasureEntry[0];
+        public LimitedEntry[] LimitEntries { get; set; } = new LimitedEntry[0];
 
         public Exception? PfcException { get; set; } = null;
 

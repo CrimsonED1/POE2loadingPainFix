@@ -8,6 +8,53 @@ namespace POE2loadingPainFix
 {
     public static class CpuTools
     {
+        public static bool[] GetProcessors_FromAffinity(nint affinity)
+        {
+            var hex = affinity.ToString("X");
+            
+            var res = new List<bool>();
+            for (int ihalfbyte = 0; ihalfbyte < hex.Length; ihalfbyte++)
+            {                
+                
+
+                byte curHalfByte = Convert.ToByte(hex[ihalfbyte].ToString(),16);
+                byte c1 = 0x0001;
+                if ((curHalfByte & c1) != 0)
+                    res.Add(true);
+                else
+                    res.Add(false);
+
+                byte c2 = 0x0002;
+                if ((curHalfByte & c2) != 0)
+                    res.Add(true);
+                else
+                    res.Add(false);
+
+                byte c3 = 0x0004;
+                if ((curHalfByte & c3) != 0)
+                    res.Add(true);
+                else
+                    res.Add(false);
+
+                byte c4 = 0x0008;
+                if ((curHalfByte & c4) != 0)
+                    res.Add(true);
+                else
+                    res.Add(false);
+
+
+                Debugging.Step();
+            }
+            return res.ToArray();
+        }
+
+        public static int GetProcessorsCount_FromAffinity(nint affinity)
+        {
+            bool[] subres = GetProcessors_FromAffinity(affinity);
+            var allset = subres.Count(x => x == true);
+            return allset;
+        }
+
         public static nint GetProcessorAffinity()
         {
             int cores = Environment.ProcessorCount / 4;
