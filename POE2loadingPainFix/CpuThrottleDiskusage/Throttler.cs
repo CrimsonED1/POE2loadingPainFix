@@ -556,12 +556,13 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             }
             Thread_Execute_PFC();
 
-            var limitMode = LimitMode.PartialOff; //prio to PARTIAL OFF!!!, after startup...
-
-
 
             if (_TP!=null && process != null)
             {
+                var limitMode = LimitMode.Off;
+                if(_TP.IsStartedAfterFix)
+                    limitMode = LimitMode.On;
+
                 Debugging.Step();
                 switch (usedConfig.LimitKind)
                 {
@@ -593,7 +594,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
 #endif
                                     if (_TP.IsStartedAfterFix)
                                     {
-                                        SetLimit(process, LimitMode.PartialOff);
+                                        SetLimit(process, LimitMode.On);
                                     }
                                     else
                                     {
