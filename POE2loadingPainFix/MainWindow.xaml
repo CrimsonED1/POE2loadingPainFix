@@ -144,7 +144,7 @@ LegendTextPaint="{Binding LegendTextPaint}">
                                 </Expander>
                             </StackPanel>
                         </Border>
-                        <Border Margin="5,5,5,5" >
+                        <Border Margin="5,5,5,5" Visibility="{Binding VisSupportPulse}">
                             <StackPanel   Orientation="Vertical">
                                 <CheckBox FontSize="20" Content="POE2 pulse-limiting " IsChecked="{Binding AppConfig.ThrottleConfig.IsAutolimit_pulse_limit}"/>
                                 <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="When POE2 is loading intances, it will be pulsed-limited (on/off) until loaded." FontStyle="Italic"/>
@@ -165,7 +165,7 @@ LegendTextPaint="{Binding LegendTextPaint}">
                         </Border>
                         <Border Height="20"/>
 
-                        <StackPanel>
+                        <StackPanel Visibility="{Binding VisSupportPulse}">
                             <Border>
                                 <Grid Height="30">
                                     <Grid.ColumnDefinitions>

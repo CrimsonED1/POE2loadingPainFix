@@ -9,6 +9,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
     {
         Off,
         On,
+        On_Inverted,
         PartialOff
     }
 
@@ -390,17 +391,27 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
             switch (limited)
             {
                 case LimitMode.On:
+                case LimitMode.On_Inverted:
                     _TP.IsLimitedByApp = true;
 
                     if (usedConfig.IsLimit_SetAffinity)
                     {
-                        //nint af_cur = process.ProcessorAffinity;
-                        nint af_limited = CpuTools.GetProcessorAffinity(usedConfig.InLimitAffinity);
+                        if (limited == LimitMode.On)
+                        {
+                            nint af_limited = CpuTools.GetProcessorAffinity(usedConfig.InLimitAffinity);
 
-                        if (process.ProcessorAffinity != af_limited)
-                            process.ProcessorAffinity = af_limited;
+                            if (process.ProcessorAffinity != af_limited)
+                                process.ProcessorAffinity = af_limited;
+                        }
+                        else //INVERTED
+                        {
+                            nint af_limited = CpuTools.GetProcessorAffinity(usedConfig.InLimitAffinity_Inverted);
+
+                            if (process.ProcessorAffinity != af_limited)
+                                process.ProcessorAffinity = af_limited;
+
+                        }
                     }
-
                     if (usedConfig.IsLimit_RemovePrioBurst)
                     {
                         var cur_prio = process.PriorityBoostEnabled;
@@ -419,7 +430,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                         }
                     }
 
-                    break;
+                    break;                
                 case LimitMode.Off:
                     _TP.IsLimitedByApp = false;
 
@@ -638,7 +649,7 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                                         if (limitMode == LimitMode.On)
                                         {
                                             if (Pulser_High)
-                                                limitMode = LimitMode.PartialOff;
+                                                limitMode = LimitMode.On_Inverted;
                                         }
                                     }//pulse
                                 }//! all unset...
@@ -660,7 +671,11 @@ namespace POE2loadingPainFix.CpuThrottleDiskusage
                             case LimitMode.On:
                                 swLimitToNormalDelaySW = null;
                                 SetLimit(process, LimitMode.On);
-
+                                Debugging.Step();
+                                break;
+                            case LimitMode.On_Inverted:
+                                swLimitToNormalDelaySW = null;
+                                SetLimit(process, LimitMode.On_Inverted);
                                 Debugging.Step();
                                 break;
                             case LimitMode.PartialOff:

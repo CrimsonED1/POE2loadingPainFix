@@ -52,6 +52,7 @@ namespace POE2loadingPainFix
         public Visibility VisPfcError => State != null && State.PfcException!=null ? Visibility.Visible : Visibility.Collapsed;
         public string ShortPfcException => State != null && State.PfcException != null ? State.PfcException.Message : "";
 
+        public Visibility VisSupportPulse => Visibility.Collapsed;
 
         public bool IsAlwaysOn
         {

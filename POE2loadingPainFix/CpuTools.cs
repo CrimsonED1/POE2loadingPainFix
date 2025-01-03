@@ -6,8 +6,55 @@ using System.Threading.Tasks;
 
 namespace POE2loadingPainFix
 {
+
     public static class CpuTools
     {
+        public static CPUEntry[] GetProcessors()
+        {
+            var cpus = Environment.ProcessorCount;
+
+
+            int cores = cpus / 4;
+            // i dont know if this could be?
+            if (cores < 0)
+                return new CPUEntry[] { new CPUEntry(0, 0, 0) };
+            int currentCore = 0;
+            int currentCore_pu = 0;
+            var res = new List<CPUEntry>();
+
+            for (int processor = 0; processor < cpus; processor++)
+            {
+                if (currentCore_pu > 3)
+                {
+                    currentCore++;
+                    currentCore_pu = 0;
+                }
+
+                res.Add(new CPUEntry(currentCore, currentCore_pu, processor));
+
+                currentCore_pu++;
+            }
+            return res.ToArray();
+        }
+
+        public static CPUEntry[] GetProcessors_perCore(uint count)
+        {
+            if(count>4)
+                throw new ArgumentOutOfRangeException($"{count}>4");
+
+            var all = GetProcessors();
+            foreach (var p in all)
+            {
+                if(p.Core_Processor<= count-1)
+                    p.IsSet = true;
+                else
+                    p.IsSet = false;
+            }
+
+            return all.ToArray();
+        }
+
+
         public static bool[] GetProcessors_FromAffinity(nint affinity)
         {
             var hex = affinity.ToString("X");

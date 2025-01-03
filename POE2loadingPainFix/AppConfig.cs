@@ -43,7 +43,7 @@ namespace POE2loadingPainFix
         public string Version { get; set; } = "";
 
         [JsonIgnore]
-        public AffinityEntry[] InLimitAffinity { get; private set; } = new AffinityEntry[0];
+        public CPUEntry[] InLimitAffinity { get; private set; } = new CPUEntry[0];
 
 
         [JsonConstructor]
@@ -63,28 +63,24 @@ namespace POE2loadingPainFix
             {
                 //load from config
                 //InLimitAffinity = new AffinityEntry[cpus];
-                for (int i = 0; i < cpus; i++)
+
+                CPUEntry[] cpulist = CpuTools.GetProcessors();
+                InLimitAffinity = cpulist;
+                for (int i = 0; i < cpulist.Length; i++)
                 {
-                    InLimitAffinity[i] = new AffinityEntry(i, ThrottleConfig.InLimitAffinity[i]);
+                    InLimitAffinity[i].IsSet = ThrottleConfig.InLimitAffinity[i];
                 }
                 Debugging.Step();
             }
             else
             {
+                CPUEntry[] cpulist = CpuTools.GetProcessors_perCore(1);
                 //DEFAULT
-                var cpuHalf = cpus / 2;
-                InLimitAffinity = new AffinityEntry[cpus];
-                for (int i = 0; i < cpus; i++)
-                {
-                    if (i < cpuHalf)
-                        InLimitAffinity[i] = new AffinityEntry(i, true);
-                    else
-                        InLimitAffinity[i] = new AffinityEntry(i, false);
-                }
+                InLimitAffinity = cpulist;
                 ThrottleConfig.InLimitAffinity = InLimitAffinity.Select(x => x.IsSet).ToArray();
             }
 
-            
+            Debugging.Step();
 
             foreach (var entry in InLimitAffinity)
                 entry.PropertyChanged += SaveOn_PropertyChanged;
@@ -155,11 +151,15 @@ namespace POE2loadingPainFix
             if(res.Version=="")
             {
                 //patch old files!
+                res.ThrottleConfig.InLimitAffinity = new bool[1];
+                res.Init();
             }
 
             if (res.Version != appVersion)
             {
                 //patch old files!
+                res.ThrottleConfig.InLimitAffinity = new bool[1];
+                res.Init();
             }
 
             res.Version = appVersion;
