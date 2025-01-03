@@ -132,7 +132,7 @@ LegendTextPaint="{Binding LegendTextPaint}">
                                 <CheckBox FontSize="20" Content="POE2 set affinity to selection " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_SetAffinity}"/>
                                 <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="If limited, use this logical processors" FontStyle="Italic"/>
                                 <Expander Header="POE2 CPU - Limited Affinity" IsExpanded="false">
-                                    <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}" MaxHeight="200">
+                                    <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
