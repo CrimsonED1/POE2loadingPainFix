@@ -3,7 +3,7 @@ using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using MahApps.Metro.Controls;
-using POE2loadingPainFix.CpuThrottleDiskusage;
+using POE2loadingPainFix;
 using SkiaSharp;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -30,7 +30,7 @@ namespace POE2loadingPainFix
         /// https://stackoverflow.com/questions/54848286/performancecounter-physicaldisk-disk-time-wrong-value
         /// </summary>
 
-        private Throttler _Throttler;
+        private PoeThrottler _Throttler;
 
         public AppConfig AppConfig { get; private set; }
 
@@ -39,12 +39,12 @@ namespace POE2loadingPainFix
         public string ShortException => LastException != null ? $"{LastException.GetType()}: {LastException.Message}" : "";
         public Exception? LastException { get; private set; } = null;
 
-        public string PoeExes => Throttler.POE_ExeNames.ToSingleString("/");
+        public string PoeExes => PoeTools.POE_ExeNames.ToSingleString("/");
 
         public Visibility VisWaitingExe => State == null || (State != null && State.TargetProcess == null) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisNormal => State != null && State.TargetProcess != null && !State.TargetProcess.IsLimitedByApp ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisLimited => State != null && State.TargetProcess != null && State.TargetProcess.IsLimitedByApp ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility VisNotResponding => State != null && State.TargetProcess != null && State.TargetProcess.IsNotResponding ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility VisNotResponding { get;private set; } = Visibility.Collapsed;
         
 
         public Visibility VisError => ShortException!="" ? Visibility.Visible : Visibility.Collapsed;
@@ -117,8 +117,9 @@ namespace POE2loadingPainFix
 
 
             AppConfig.ThrottleConfig.PropertyChanged += Config_PropertyChanged;
+            PoeThreadSharedContext.Instance.Config = (Config)AppConfig.ThrottleConfig.Clone();
 
-            _Throttler = new Throttler(AppConfig.ThrottleConfig);
+            _Throttler = new PoeThrottler();
             _Throttler.GuiUpdate += _Throttler_GuiUpdate;
 
             Series = [
@@ -170,18 +171,18 @@ namespace POE2loadingPainFix
                 GeometryStroke = null
             },
 
-            //            new LineSeries<DateTimePoint>
-            //{
-            //    Values = _NotRespondingValues,
-            //    Fill = null,
-            //    Stroke = new SolidColorPaint(SKColors.Yellow) { StrokeThickness = 3 },
+                        new LineSeries<DateTimePoint>
+            {
+                Values = _Values_NotResponding,
+                Fill = null,
+                Stroke = new SolidColorPaint(SKColors.Orange) { StrokeThickness = 3 },
 
-            //    Name="Not-Responding",
-            //    GeometryFill = null,
-            //    GeometryStroke = null
-            //},
+                Name="Not-Responding",
+                GeometryFill = null,
+                GeometryStroke = null
+            },
 
-            
+
 
             ];
 
@@ -391,6 +392,16 @@ namespace POE2loadingPainFix
 
                     _Values_Limited.AddRange(State.LimitEntries.Select(x => new DateTimePoint(x.DT, x.Limited? 100:0)));
                     _Values_Limited.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+
+                    _Values_NotResponding.AddRange(State.LimitEntries.Select(x => new DateTimePoint(x.DT, x.NotResponding ? 100 : 0)));
+                    _Values_NotResponding.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+
+                    var lastNotResponding = _Values_NotResponding.Last();
+
+                    var oldVisValue = VisNotResponding;
+                    VisNotResponding = lastNotResponding.Value>0 ? Visibility.Visible : Visibility.Collapsed;
+                    if(oldVisValue != VisNotResponding)
+                        OnPropertyChanged(nameof(VisNotResponding));
                 }
                 // we need to update the separators every time we add a new point 
                 _customAxis.CustomSeparators = GetSeparators();
@@ -405,7 +416,8 @@ namespace POE2loadingPainFix
             Config newConfig = (Config)AppConfig.ThrottleConfig.Clone();
             newConfig.InLimitAffinity = AppConfig.InLimitAffinity.Select(x => x.IsSet).ToArray();
 
-            _Throttler?.UpdateConfig(newConfig);
+            PoeThreadSharedContext.Instance.Config = newConfig;
+
             OnPropertyChanged(nameof(IsAlwaysOff));
             OnPropertyChanged(nameof(IsAlwaysOn));
             OnPropertyChanged(nameof(IsViaPoe2LogFile));

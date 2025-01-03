@@ -31,10 +31,10 @@
                         </StackPanel>
                     </Viewbox>
                     <Viewbox Visibility="{Binding VisLimited}">
-                        <Label Background="Red" Foreground="White" FontSize="20" Content="POE2 CPU Limited!"/>
+                        <Label Background="Red" Foreground="Black" FontSize="20" Content="POE2 CPU Limited!"/>
                     </Viewbox>
                     <Viewbox Visibility="{Binding VisNormal}">
-                        <Label Background="Lime" FontSize="20" Content="POE2 CPU Normal"/>
+                        <Label Background="Lime" FontSize="20" Foreground="Black" Content="POE2 CPU Normal"/>
                     </Viewbox>
                     <Viewbox Visibility="{Binding VisNotResponding}">
                         <Label Background="Yellow" Foreground="Black" FontSize="20" Content="POE2 not responding"/>
@@ -104,7 +104,7 @@
                             <Label Content="{Binding State.IOReadCaption}" FontSize="15"/>
                         </StackPanel>
 
-                        <Border Height="200">
+                        <Border Height="300">
                             <lvc:CartesianChart
             SyncContext="{Binding SyncRoot}"
             Series="{Binding Series}"
@@ -144,12 +144,7 @@ LegendTextPaint="{Binding LegendTextPaint}">
                                 </Expander>
                             </StackPanel>
                         </Border>
-                        <Border Margin="5,5,5,5" Visibility="{Binding VisSupportPulse}">
-                            <StackPanel   Orientation="Vertical">
-                                <CheckBox FontSize="20" Content="POE2 pulse-limiting " IsChecked="{Binding AppConfig.ThrottleConfig.IsAutolimit_pulse_limit}"/>
-                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="When POE2 is loading intances, it will be pulsed-limited (on/off) until loaded." FontStyle="Italic"/>
-                            </StackPanel>
-                        </Border>                        
+                        
                         <Border Margin="5,5,5,5">
                             <StackPanel   Orientation="Vertical">
                                 <CheckBox FontSize="20" Content="Remove Priorty Boost " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_RemovePrioBurst}"/>
@@ -165,35 +160,7 @@ LegendTextPaint="{Binding LegendTextPaint}">
                         </Border>
                         <Border Height="20"/>
 
-                        <StackPanel Visibility="{Binding VisSupportPulse}">
-                            <Border>
-                                <Grid Height="30">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="220"/>
-                                        <ColumnDefinition Width="53"/>
-                                        <ColumnDefinition Width="90*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Label  Grid.Column="0" Content="Pulse Time (Affinity Normal)"/>
-                                    <Label  Grid.Column="1" Content="{Binding AppConfig.ThrottleConfig.Autolimit_pulse_High_SecsCaption}"/>
-                                    <Slider Grid.Column="2" Value="{Binding AppConfig.ThrottleConfig.Autolimit_pulse_High_Secs}" Minimum="0.1" Maximum="5"/>
-                                </Grid>
-                            </Border>
-                            <Border Height="10"/>
-
-                            <Border>
-                                <Grid Height="30">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="220"/>
-                                        <ColumnDefinition Width="53"/>
-                                        <ColumnDefinition Width="90*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Label  Grid.Column="0" Content="Pulse Time (Affinity Limited)"/>
-                                    <Label  Grid.Column="1" Content="{Binding AppConfig.ThrottleConfig.Autolimit_pulse_Low_SecsCaption}"/>
-                                    <Slider Grid.Column="2" Value="{Binding AppConfig.ThrottleConfig.Autolimit_pulse_Low_Secs}" Minimum="0.1" Maximum="5"/>
-                                </Grid>
-                            </Border>
-                            <Border Height="10"/>
-                        </StackPanel>
+                        
                         <Border>
                             <Grid Height="30">
                                 <Grid.ColumnDefinitions>

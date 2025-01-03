@@ -1,4 +1,4 @@
-﻿namespace POE2loadingPainFix.CpuThrottleDiskusage
+﻿namespace POE2loadingPainFix
 {
     public class ThrottlerCriticalException : Exception
     {

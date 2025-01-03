@@ -1,5 +1,4 @@
 ﻿using LiveChartsCore.Defaults;
-using POE2loadingPainFix.CpuThrottleDiskusage;
 using System.Diagnostics;
 using System.IO;
 using static System.Net.WebRequestMethods;
@@ -33,8 +32,6 @@ namespace POE2loadingPainFix
         public int PID { get; private set; }
 
         public bool IsLimitedByApp { get; set; } = false;
-        public bool IsNotResponding { get; private set; }
-
         public nint Orginal_Affinity { get; }
 
         public ProcessPriorityClass Orginal_PriortyClass { get; }
@@ -111,9 +108,6 @@ namespace POE2loadingPainFix
 
             Current_Affinity = process.ProcessorAffinity;
             
-            IsNotResponding = false;
-            ///TODO: this is also slowing down the thread, i have to move it to another thread and get the value.
-            //IsNotResponding = !process.Responding;
 
             if (Current_Affinity > 0)
             {
