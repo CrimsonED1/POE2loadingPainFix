@@ -9,6 +9,7 @@
     <Platforms>AnyCPU;x64</Platforms>
     <ApplicationIcon>appicon.ico</ApplicationIcon>
     <IncludeSymbols>False</IncludeSymbols>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
