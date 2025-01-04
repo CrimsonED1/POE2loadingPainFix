@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace POE2loadingPainFix
 {
-    internal class PoeThreadAffinity
+    public class PoeThreadAffinity:PoeThread
     {
+        public const string Counter_AffinityPercent = "AFFINITY%";
+
+
     }
 }

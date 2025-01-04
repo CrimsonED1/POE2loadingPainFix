@@ -10,7 +10,14 @@ namespace POE2loadingPainFix
 {
     public static class PoeTools
     {
-        public static readonly string[] POE_ExeNames = ["PathOfExileSteam", "PathOfExile"];
+        public static readonly string[] POE_ExeNames = 
+            [
+#if DEBUG
+            "DummyPOE",
+#endif
+            "PathOfExileSteam", 
+            "PathOfExile",
+            ];
 
         public static Process? GetPOE()
         {

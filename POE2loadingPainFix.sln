@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "POE2loadingPainFix", "POE2l
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.POE2loadingPainFixTests", "Tests\Test.POE2loadingPainFixTests\Test.POE2loadingPainFixTests.csproj", "{C487C375-1F53-4112-B0ED-5371B9303B6E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DummyPOE", "DummyPOE\DummyPOE.csproj", "{541905DE-4196-438B-8BEF-D3A47C1DCCCB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,14 @@ Global
 		{C487C375-1F53-4112-B0ED-5371B9303B6E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C487C375-1F53-4112-B0ED-5371B9303B6E}.Release|x64.ActiveCfg = Release|Any CPU
 		{C487C375-1F53-4112-B0ED-5371B9303B6E}.Release|x64.Build.0 = Release|Any CPU
+		{541905DE-4196-438B-8BEF-D3A47C1DCCCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{541905DE-4196-438B-8BEF-D3A47C1DCCCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{541905DE-4196-438B-8BEF-D3A47C1DCCCB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{541905DE-4196-438B-8BEF-D3A47C1DCCCB}.Debug|x64.Build.0 = Debug|Any CPU
+		{541905DE-4196-438B-8BEF-D3A47C1DCCCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{541905DE-4196-438B-8BEF-D3A47C1DCCCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{541905DE-4196-438B-8BEF-D3A47C1DCCCB}.Release|x64.ActiveCfg = Release|Any CPU
+		{541905DE-4196-438B-8BEF-D3A47C1DCCCB}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

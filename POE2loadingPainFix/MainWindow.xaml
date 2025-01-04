@@ -18,7 +18,7 @@
             <StackPanel>
                 <GroupBox Header="Exception:" Visibility="{Binding VisError}" >
                     <StackPanel Orientation="Vertical">
-                        <TextBlock Text="{Binding ShortException}" Background="Red" Foreground="Black"/>
+                        <TextBlock Text="{Binding LastExceptionsCaptions}" Background="Red" Foreground="Black"/>
                         <Border Height="10"/>
                         <Button x:Name="btShowFullError" Content="Show full error" Click="btShowFullError_Click" Width="200"/>
                     </StackPanel>
@@ -86,11 +86,6 @@
                         <Border Margin="5,5,5,5">
                             <CheckBox FontSize="15" Content="Update graphs" IsChecked="{Binding IsUpdateGraphs}"/>
                         </Border>
-
-                        <StackPanel Orientation="Vertical" Visibility="{Binding VisPfcError}">
-                            <Label Background="Yellow" FontSize="20" Content="PFC-Exception (no impact on POE2-CPU-limitations!)" Foreground="Black"/>
-                            <Label Background="Yellow" FontSize="20" Content="{Binding ShortPfcException}" Foreground="Black"/>
-                        </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Label Content="CPU Usage (PFC: % Total):" FontSize="15"/>
                             <Label Content="{Binding State.CpuUsageCaption}" FontSize="15"/>
@@ -141,45 +136,6 @@ LegendTextPaint="{Binding LegendTextPaint}">
                         </Border>
 
 
-                        <Expander Header="Affinity (only use if you have to)" IsExpanded="False">
-                            <StackPanel>
-                                <Border Margin="5,5,5,5">
-                                    <StackPanel   Orientation="Vertical">
-                                        <CheckBox FontSize="20" Content="POE2 set affinity to selection " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_SetAffinity}"/>
-                                        <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="If limited, use this logical processors" FontStyle="Italic"/>
-                                        <Expander Header="POE2 CPU - Limited Affinity" IsExpanded="false">
-                                            <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}">
-                                                <ListBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <CheckBox Content="{Binding Caption}" IsChecked="{Binding IsSet}"/>
-                                                        </StackPanel>
-                                                    </DataTemplate>
-                                                </ListBox.ItemTemplate>
-                                            </ListBox>
-                                        </Expander>
-                                    </StackPanel>
-                                </Border>
-
-
-                                <Border Margin="5,5,5,5">
-                                    <StackPanel   Orientation="Vertical">
-                                        <CheckBox FontSize="20" Content="Remove Priorty Boost " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_RemovePrioBurst}"/>
-                                        <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="Remove CPU PriorityBoostEnabled (Always set on POE2)." FontStyle="Italic"/>
-                                        <TextBlock><Hyperlink NavigateUri="https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.priorityboostenabled">MS-Doc PriorityBoostEnabled </Hyperlink></TextBlock>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Margin="5,5,5,5">
-                                    <StackPanel   Orientation="Vertical">
-                                        <CheckBox FontSize="20" Content="Set POE2 Priorty to LowerNormal" IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_PrioLower}"/>
-                                        <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="Most processes have normal. But LowerNormal should result in lower CPU usage" FontStyle="Italic"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Height="20"/>
-
-                            </StackPanel>
-                        </Expander>
                         
                         
 
@@ -219,13 +175,54 @@ LegendTextPaint="{Binding LegendTextPaint}">
                                     <ColumnDefinition Width="60"/>
                                     <ColumnDefinition Width="90*"/>
                                 </Grid.ColumnDefinitions>
-                                <Label  Grid.Column="0" Content="Delay reset affinity to normal"/>
+                                <Label  Grid.Column="0" Content="Delay reset limit to normal"/>
                                 <Label  Grid.Column="1" Content="{Binding AppConfig.ThrottleConfig.LimitToNormalDelaySecsCaption}"/>
                                 <Slider Grid.Column="2" Value="{Binding AppConfig.ThrottleConfig.LimitToNormalDelaySecs}" Minimum="0.1" Maximum="10"/>
                             </Grid>
                         </Border>
 
-  
+
+
+                        <Expander Header="Affinity (only use if you have to)" IsExpanded="False">
+                            <StackPanel>
+                                <Border Margin="5,5,5,5">
+                                    <StackPanel   Orientation="Vertical">
+                                        <CheckBox FontSize="20" Content="POE2 set affinity to selection " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_SetAffinity}"/>
+                                        <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="If limited, use this logical processors" FontStyle="Italic"/>
+                                        <Expander Header="POE2 CPU - Limited Affinity" IsExpanded="false">
+                                            <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <CheckBox Content="{Binding Caption}" IsChecked="{Binding IsSet}"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </Expander>
+                                    </StackPanel>
+                                </Border>
+
+
+                                <Border Margin="5,5,5,5">
+                                    <StackPanel   Orientation="Vertical">
+                                        <CheckBox FontSize="20" Content="Remove Priorty Boost " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_RemovePrioBurst}"/>
+                                        <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="Remove CPU PriorityBoostEnabled (Always set on POE2)." FontStyle="Italic"/>
+                                        <TextBlock><Hyperlink NavigateUri="https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.priorityboostenabled">MS-Doc PriorityBoostEnabled </Hyperlink></TextBlock>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Margin="5,5,5,5">
+                                    <StackPanel   Orientation="Vertical">
+                                        <CheckBox FontSize="20" Content="Set POE2 Priorty to LowerNormal" IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_PrioLower}"/>
+                                        <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="Most processes have normal. But LowerNormal should result in lower CPU usage" FontStyle="Italic"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Height="20"/>
+
+                            </StackPanel>
+                        </Expander>
+
                     </StackPanel>
                 </GroupBox>
 

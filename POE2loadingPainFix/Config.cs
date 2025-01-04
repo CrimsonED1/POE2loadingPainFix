@@ -46,9 +46,8 @@ namespace POE2loadingPainFix
                 IsLimit_PrioLower = IsLimit_PrioLower,
                 IsLimit_RemovePrioBurst = IsLimit_RemovePrioBurst,
                 IsLimit_SetAffinity = IsLimit_SetAffinity,
-                LimitThreadsDelayMSecs = LimitThreadsDelayMSecs,
-                InLimitAffinity_Inverted
-                
+                LimitThreads_Pause_MSecs = LimitThreads_Pause_MSecs,
+                LimitThreads_Run_MSecs = LimitThreads_Run_MSecs,
                 IsLimit_ViaThreads = IsLimit_ViaThreads,
             };
             return res;

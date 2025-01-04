@@ -1,27 +1,78 @@
-﻿namespace POE2loadingPainFix
+﻿using System.Collections.Generic;
+
+namespace POE2loadingPainFix
 {
 
     public class State
     {
         public TargetProcess? TargetProcess { get; }
+        public ThreadState[] ThreadStates { get; set; } = new ThreadState[0];
 
-        public MeasureEntry[] MeasureEntries { get; set; } = new MeasureEntry[0];
-        public LimitedEntry[] LimitEntries { get; set; } = new LimitedEntry[0];
+        public string ExceptionsCaption
+        {
+            get
+            {
+                if (ThreadStates.Length == 0)
+                    return "";
+                var res = ThreadStates.Where(x=>x.Exception!=null).Select(x => $"Thread: {x.ThreadType.Name} Exception: {x.Exception!.Message}").ToSingleString(Environment.NewLine);
+                return res;
+            }
+        }
 
-        public Exception? PfcException { get; set; } = null;
-
-        public string CpuUsageCaption => MeasureEntries.Length > 0 ? $"{MeasureEntries.Last().CpuUsage:N1} %" : "N/A";
-        public string DiskUsageCaption => MeasureEntries.Length > 0 ? $"{MeasureEntries.Last().DiskUsage:N1} %" : "N/A";
-        public string IOReadCaption => MeasureEntries.Length > 0 ? $"{MeasureEntries.Last().IORead:N2} MB/s" : "N/A";
-        public string ThreadsCaption => LimitEntries.Length > 0 ? $"{LimitEntries.Last().LimitDoneThreads}/{LimitEntries.Last().TotalThreads}" : "N/A";
-
-        public Exception? LastError { get; set; }
+        public string CpuUsageCaption => $"{GetLastMeasureValue(PoeThreadPFC.Counter_CpuUsage):N0} %";
+        public string DiskUsageCaption => $"{GetLastMeasureValue(PoeThreadPFC.Counter_DiskUsage):N0} %";
+        public string IOReadCaption => $"{GetLastMeasureValue(PoeThreadPFC.Counter_IORead):N2} MB/s";
+        public string ThreadsCaption => $"{GetLastMeasureValue(PoeThreadLimitThreads.Counter_DoneThreads)} / {GetLastMeasureValue(PoeThreadLimitThreads.Counter_TotalThreads)}"; 
 
         public string LimitCaption { get; set; } = "";
 
+        public Dictionary<string, List<DtValue>> AllMeasures 
+        {
+            get
+            {
+                var res = new Dictionary<string, List<DtValue>>();
+                foreach ( var ts in ThreadStates )
+                {
+                    foreach( var m in ts.Measures )
+                    {
+                        res.Add(m.Key,m.Value);
+                    }
+                    
+                }
+                return res;
+            }
+        }
 
-        public TimeSpan? CycleTime { get; set; }
-        public string CycleTimeCaption => CycleTime != null ? $"{CycleTime.Value.TotalMilliseconds:n0} ms" : "N/A";
+        public List<DtValue> GetMeasureValues(string caption)
+        {
+            if (!AllMeasures.TryGetValue(caption, out var values))
+                return new List<DtValue>();
+            return values;
+        }
+
+        public double GetLastMeasureValue(string caption)
+        {
+            if(!AllMeasures.TryGetValue(caption, out var values))
+                return 0;
+
+            double res = 0;
+            if (values.Count > 0)
+            {
+                res = values.Last().Value;
+            }
+            return res;
+        }
+
+        public string CycleTimeCaption
+        {
+            get
+            {
+                if (ThreadStates.Length == 0)
+                    return "";
+                var res = ThreadStates.Select(x => x.CycleTime!=null ?  $"{x.ThreadType.Name}={x.CycleTime.Value.TotalMilliseconds:n0} ms" : "N/A").ToSingleString();
+                return res;
+            }
+        }
 
         public State(TargetProcess? targetProcess)
         {

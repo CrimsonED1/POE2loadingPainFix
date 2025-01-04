@@ -21,7 +21,8 @@ namespace POE2loadingPainFix
     /// </summary>
     public partial class ExceptionWindow : Window,INotifyPropertyChanged
     {
-        public ExceptionWindow(Exception exception, string additionals="")
+     
+        public ExceptionWindow(Exception[] exceptions, string additionals="")
         {
             InitializeComponent();
             
@@ -35,8 +36,11 @@ namespace POE2loadingPainFix
             lines.Add($"---------------------");
             lines.Add($"{additionals}");
             lines.Add($"---------------------");
-            lines.Add($"{exception}");
-            lines.Add($"---------------------");
+            foreach (Exception ex in exceptions)
+            {
+                lines.Add($"{ex}");
+                lines.Add($"---------------------");
+            }
 
             var devPath = @"C:\Users\Karsten\OneDrive\Dokumente\Development\";
             var txt = lines.ToSingleString(Environment.NewLine);
