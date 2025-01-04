@@ -7,6 +7,7 @@ namespace POE2loadingPainFix
 {
     public class TargetProcess : ICloneable
     {
+
         public string ExeName_NoExtension=> Path.GetFileNameWithoutExtension(ImagePath);
 
         public string ImagePath { get; } = "";
