@@ -103,6 +103,10 @@
                             <Label Content="POE2 Usage (PFC: IO Read MBytes/sec):" FontSize="15"/>
                             <Label Content="{Binding State.IOReadCaption}" FontSize="15"/>
                         </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="POE2 (Limited Threads / Total Threads" FontSize="15"/>
+                            <Label Content="{Binding State.ThreadsCaption}" FontSize="15"/>
+                        </StackPanel>
 
                         <Border Height="300">
                             <lvc:CartesianChart
@@ -118,6 +122,7 @@ LegendTextPaint="{Binding LegendTextPaint}">
 
                 <GroupBox Header="Limit Settings">
                     <StackPanel>
+
                         <StackPanel Orientation="Horizontal">
                             <Label Content="CPU:"/>
                             <Label Content="{Binding CpuCaption}"/>
@@ -126,53 +131,92 @@ LegendTextPaint="{Binding LegendTextPaint}">
                             <Label Content="Logical Processors:"/>
                             <Label Content="{Binding CPUs}"/>
                         </StackPanel>
+
+                        <Border Margin="5,5,5,5">
+                            <StackPanel   Orientation="Vertical">
+                                <CheckBox FontSize="20" Content="Set POE2 threads to limit" IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_ViaThreads}"/>
+                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="setting a delay to the POE2 threads like BES" FontStyle="Italic"/>
+                                <TextBlock><Hyperlink NavigateUri="https://mion.yosei.fi/BES/">BES – Battle Encoder Shirasé </Hyperlink></TextBlock>
+                            </StackPanel>
+                        </Border>
+
+
+                        <Expander Header="Affinity (only use if you have to)" IsExpanded="False">
+                            <StackPanel>
+                                <Border Margin="5,5,5,5">
+                                    <StackPanel   Orientation="Vertical">
+                                        <CheckBox FontSize="20" Content="POE2 set affinity to selection " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_SetAffinity}"/>
+                                        <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="If limited, use this logical processors" FontStyle="Italic"/>
+                                        <Expander Header="POE2 CPU - Limited Affinity" IsExpanded="false">
+                                            <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <CheckBox Content="{Binding Caption}" IsChecked="{Binding IsSet}"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </Expander>
+                                    </StackPanel>
+                                </Border>
+
+
+                                <Border Margin="5,5,5,5">
+                                    <StackPanel   Orientation="Vertical">
+                                        <CheckBox FontSize="20" Content="Remove Priorty Boost " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_RemovePrioBurst}"/>
+                                        <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="Remove CPU PriorityBoostEnabled (Always set on POE2)." FontStyle="Italic"/>
+                                        <TextBlock><Hyperlink NavigateUri="https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.priorityboostenabled">MS-Doc PriorityBoostEnabled </Hyperlink></TextBlock>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Margin="5,5,5,5">
+                                    <StackPanel   Orientation="Vertical">
+                                        <CheckBox FontSize="20" Content="Set POE2 Priorty to LowerNormal" IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_PrioLower}"/>
+                                        <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="Most processes have normal. But LowerNormal should result in lower CPU usage" FontStyle="Italic"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Height="20"/>
+
+                            </StackPanel>
+                        </Expander>
                         
-                        <Border Margin="5,5,5,5">
-                            <StackPanel   Orientation="Vertical">
-                                <CheckBox FontSize="20" Content="POE2 set affinity to selection " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_SetAffinity}"/>
-                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="If limited, use this logical processors" FontStyle="Italic"/>
-                                <Expander Header="POE2 CPU - Limited Affinity" IsExpanded="false">
-                                    <ListBox ItemsSource="{Binding AppConfig.InLimitAffinity}">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <CheckBox Content="{Binding Caption}" IsChecked="{Binding IsSet}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                </Expander>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Margin="5,5,5,5">
-                            <StackPanel   Orientation="Vertical">
-                                <CheckBox FontSize="20" Content="Set POE2 Threads to limit" IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_ViaThreads}"/>
-                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="add something" FontStyle="Italic"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Margin="5,5,5,5">
-                            <StackPanel   Orientation="Vertical">
-                                <CheckBox FontSize="20" Content="Remove Priorty Boost " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_RemovePrioBurst}"/>
-                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="Remove CPU PriorityBoostEnabled (Always set on POE2)." FontStyle="Italic"/>
-                                <TextBlock><Hyperlink NavigateUri="https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.priorityboostenabled">MS-Doc PriorityBoostEnabled </Hyperlink></TextBlock>
-                            </StackPanel>
-                        </Border>
-                        <Border Margin="5,5,5,5">
-                            <StackPanel   Orientation="Vertical">
-                                <CheckBox FontSize="20" Content="Set POE2 Priorty to LowerNormal" IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_PrioLower}"/>
-                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="Most processes have normal. But LowerNormal should result in lower CPU usage" FontStyle="Italic"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Height="20"/>
+                        
 
                         
                         <Border>
                             <Grid Height="30">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="220"/>
-                                    <ColumnDefinition Width="53"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="90*"/>
+                                </Grid.ColumnDefinitions>
+                                <Label  Grid.Column="0" Content="Limit Threads: Run threads (10ms default)"/>
+                                <Label  Grid.Column="1" Content="{Binding AppConfig.ThrottleConfig.LimitThreads_Pause_Caption}"/>
+                                <Slider Grid.Column="2" Value="{Binding AppConfig.ThrottleConfig.LimitThreads_Pause_MSecs}" Minimum="1" Maximum="1000"/>
+                            </Grid>
+                        </Border>
+
+                        <Border>
+                            <Grid Height="30">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="90*"/>
+                                </Grid.ColumnDefinitions>
+                                <Label  Grid.Column="0" Content="Limit Threads: Pause threads (10ms default)"/>
+                                <Label  Grid.Column="1" Content="{Binding AppConfig.ThrottleConfig.LimitThreads_Run_Caption}"/>
+                                <Slider Grid.Column="2" Value="{Binding AppConfig.ThrottleConfig.LimitThreads_Run_MSecs}" Minimum="1" Maximum="1000"/>
+                            </Grid>
+                        </Border>
+
+
+
+                        <Border>
+                            <Grid Height="30">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220"/>
+                                    <ColumnDefinition Width="60"/>
                                     <ColumnDefinition Width="90*"/>
                                 </Grid.ColumnDefinitions>
                                 <Label  Grid.Column="0" Content="Delay reset affinity to normal"/>

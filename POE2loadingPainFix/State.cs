@@ -13,6 +13,7 @@
         public string CpuUsageCaption => MeasureEntries.Length > 0 ? $"{MeasureEntries.Last().CpuUsage:N1} %" : "N/A";
         public string DiskUsageCaption => MeasureEntries.Length > 0 ? $"{MeasureEntries.Last().DiskUsage:N1} %" : "N/A";
         public string IOReadCaption => MeasureEntries.Length > 0 ? $"{MeasureEntries.Last().IORead:N2} MB/s" : "N/A";
+        public string ThreadsCaption => LimitEntries.Length > 0 ? $"{LimitEntries.Last().LimitDoneThreads}/{LimitEntries.Last().TotalThreads}" : "N/A";
 
         public Exception? LastError { get; set; }
 

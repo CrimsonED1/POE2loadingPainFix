@@ -9,13 +9,23 @@
         public bool NotResponding { get; }
         public bool IsTryRecovery { get; }
 
-        public LimitedEntry(DateTime dT, double affinity_percent, bool limited, bool notResponding,bool isTryRecovery)
+        public int LimitDoneThreads { get; }
+        public int TotalThreads { get; }
+
+        public LimitedEntry(DateTime dT, double affinity_percent, bool limited, 
+            bool notResponding,
+            bool isTryRecovery,
+            int totalThreads,
+            int limitDoneThreads
+            )
         {
             DT = dT;
             Limited = limited;
             AffinityPercent = affinity_percent;
             NotResponding = notResponding;
             IsTryRecovery = isTryRecovery;
+            TotalThreads = totalThreads;
+            LimitDoneThreads = limitDoneThreads;
         }
 
     }

@@ -15,33 +15,20 @@ namespace POE2loadingPainFix
 
         public bool[] InLimitAffinity { get; set; } = new bool[] { true }; //min 1
 
-        private bool[]? _InLimitAffinity_Inverted;
-        public bool[] InLimitAffinity_Inverted
-        {
-            get
-            {
-                if (_InLimitAffinity_Inverted != null)
-                    return _InLimitAffinity_Inverted;
-                var inv = new bool[InLimitAffinity.Length];
-                for (int i = 0; i < InLimitAffinity.Length; i++)
-                {
-                    inv[i] = !InLimitAffinity[i];
-                }
-                return inv;
-            }
-        }
+        public int LimitThreads_Pause_MSecs { get; set; } = 10;
+        public string LimitThreads_Pause_Caption => $"{LimitThreads_Pause_MSecs} MSecs";
 
-
-
+        public int LimitThreads_Run_MSecs { get; set; } = 10;
+        public string LimitThreads_Run_Caption => $"{LimitThreads_Run_MSecs} MSecs";
 
 
         public double LimitToNormalDelaySecs { get; set; } = 1;
         public string LimitToNormalDelaySecsCaption => $"{LimitToNormalDelaySecs:N1} secs";
         public LimitKind LimitKind { get; set; } = LimitKind.ViaClientLog;
 
-        public bool IsLimit_SetAffinity { get; set; } = true;
-        public bool IsLimit_RemovePrioBurst { get; set; } = true;
-        public bool IsLimit_PrioLower { get; set; } = true;
+        public bool IsLimit_SetAffinity { get; set; } = false;
+        public bool IsLimit_RemovePrioBurst { get; set; } = false;
+        public bool IsLimit_PrioLower { get; set; } = false;
 
         
         public bool IsLimit_ViaThreads { get; set; } = true;
@@ -59,6 +46,8 @@ namespace POE2loadingPainFix
                 IsLimit_PrioLower = IsLimit_PrioLower,
                 IsLimit_RemovePrioBurst = IsLimit_RemovePrioBurst,
                 IsLimit_SetAffinity = IsLimit_SetAffinity,
+                LimitThreadsDelayMSecs = LimitThreadsDelayMSecs,
+                InLimitAffinity_Inverted
                 
                 IsLimit_ViaThreads = IsLimit_ViaThreads,
             };

@@ -30,6 +30,7 @@ namespace POE2loadingPainFix
 
         private bool IsGuiTaskActive = false;
 
+        private int LimitDoneThreads = 0;
 
 #if RECOVERY
         PoeRecovery? Recovery;
@@ -45,7 +46,7 @@ namespace POE2loadingPainFix
         public PoeThrottler() : base()
         {
             this.OnThreadException += PoeThrottler_OnThreadException;
-            
+
         }
 
         private void PoeThrottler_OnThreadException(object? sender, Exception ex)
@@ -321,31 +322,29 @@ namespace POE2loadingPainFix
 
                     if (UsedConfig.IsLimit_ViaThreads)
                     {
-                        ThreadLimit.ThrottleProcess(process);
+                        LimitDoneThreads = ThreadLimit.ThrottleProcess(process, UsedConfig.LimitThreadsDelayMSecs);
                     }
-                    else
+
+                    if (UsedConfig.IsLimit_SetAffinity)
                     {
-                        if (UsedConfig.IsLimit_SetAffinity)
+                        if (limited == LimitMode.On)
                         {
-                            if (limited == LimitMode.On)
-                            {
-                                nint af_limited = CpuTools.GetProcessorAffinity(UsedConfig.InLimitAffinity);
+                            nint af_limited = CpuTools.GetProcessorAffinity(UsedConfig.InLimitAffinity);
 
-                                if (process.ProcessorAffinity != af_limited)
-                                    process.ProcessorAffinity = af_limited;
-                            }
-
+                            if (process.ProcessorAffinity != af_limited)
+                                process.ProcessorAffinity = af_limited;
                         }
-                        if (UsedConfig.IsLimit_RemovePrioBurst)
+
+                    }
+                    if (UsedConfig.IsLimit_RemovePrioBurst)
+                    {
+                        var cur_prio = process.PriorityBoostEnabled;
+                        if (cur_prio != false)
                         {
-                            var cur_prio = process.PriorityBoostEnabled;
-                            if (cur_prio != false)
-                            {
-                                process.PriorityBoostEnabled = false;
-                            }
+                            process.PriorityBoostEnabled = false;
                         }
                     }
-                    
+
 
                     break;
                 case LimitMode.Off:
@@ -354,32 +353,31 @@ namespace POE2loadingPainFix
                     if (UsedConfig.IsLimit_ViaThreads)
                     {
                         //nothing to do here!
+                        LimitDoneThreads = 0;
                     }
-                    else
+
+                    if (UsedConfig.IsLimit_SetAffinity)
                     {
-
-                        if (UsedConfig.IsLimit_SetAffinity)
+                        nint af_normal = CpuTools.GetProcessorAffinity();
+                        if (process.ProcessorAffinity != _TP.Orginal_Affinity)
                         {
-                            nint af_normal = CpuTools.GetProcessorAffinity();
-                            if (process.ProcessorAffinity != _TP.Orginal_Affinity)
-                            {
-                                process.ProcessorAffinity = _TP.Orginal_Affinity;
-                            }
-                        }
-
-                        if (UsedConfig.IsLimit_RemovePrioBurst)
-                        {
-                            var cur_prio = process.PriorityBoostEnabled;
-
-                            bool usedValue = _TP.Orginal_PriorityBoostEnabled;
-                            if (cur_prio != usedValue)
-                            {
-                                process.PriorityBoostEnabled = usedValue;
-                            }
+                            process.ProcessorAffinity = _TP.Orginal_Affinity;
                         }
                     }
 
-                    
+                    if (UsedConfig.IsLimit_RemovePrioBurst)
+                    {
+                        var cur_prio = process.PriorityBoostEnabled;
+
+                        bool usedValue = _TP.Orginal_PriorityBoostEnabled;
+                        if (cur_prio != usedValue)
+                        {
+                            process.PriorityBoostEnabled = usedValue;
+                        }
+                    }
+
+
+
                     break;
                 default:
                     throw new NotImplementedException();
@@ -391,7 +389,7 @@ namespace POE2loadingPainFix
 
         protected override void Thread_Execute()
         {
-  
+
             Process? process = PoeTools.GetPOE();
             if (process == null)
             {
@@ -573,7 +571,11 @@ namespace POE2loadingPainFix
                     bool isNotResponding = PoeThreadSharedContext.Instance.IsNotResponding;
                     bool isTryRecovery = PoeThreadSharedContext.Instance.IsTryRecovery;
 
-                    limits.Add(new LimitedEntry(DT_Cylcle, _TP!.Current_Affinity_Percent, _TP.IsLimitedByApp, isNotResponding, isTryRecovery));
+                    limits.Add(new LimitedEntry(DT_Cylcle,
+                        _TP!.Current_Affinity_Percent,
+                        _TP.IsLimitedByApp,
+                        isNotResponding,
+                        isTryRecovery, _TP.Threads, LimitDoneThreads));
 
                 }
 

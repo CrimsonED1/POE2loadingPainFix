@@ -171,16 +171,16 @@ namespace POE2loadingPainFix
                 GeometryStroke = null
             },
 
-                        new LineSeries<DateTimePoint>
-            {
-                Values = _Values_NotResponding,
-                Fill = null,
-                Stroke = new SolidColorPaint(SKColors.Orange) { StrokeThickness = 3 },
+            //            new LineSeries<DateTimePoint>
+            //{
+            //    Values = _Values_NotResponding,
+            //    Fill = null,
+            //    Stroke = new SolidColorPaint(SKColors.Orange) { StrokeThickness = 3 },
 
-                Name="Not-Responding",
-                GeometryFill = null,
-                GeometryStroke = null
-            },
+            //    Name="Not-Responding",
+            //    GeometryFill = null,
+            //    GeometryStroke = null
+            //},
 
 
 

@@ -24,7 +24,7 @@ namespace POE2loadingPainFix
         private const int THREAD_SUSPEND_RESUME = 0x0002;
 
 
-        public static void ThrottleProcess(Process process)
+        public static int ThrottleProcess(Process process, int targetdelayMS)
         {
             // Replace with the target process ID and thread ID
             int targetProcessId = process.Id;
@@ -52,7 +52,7 @@ namespace POE2loadingPainFix
                     {
                         step = "Pre SuspendThread";
                         SuspendThread(hThread);
-                        Thread.Sleep(100);
+                        Thread.Sleep(targetdelayMS);
                         // Perform your operations here
                         step = "Pre ResumeThread";
                         ResumeThread(hThread);
@@ -75,8 +75,9 @@ namespace POE2loadingPainFix
             Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - ThrottleProcess Threads: {thread_done_count}/{thread_count} Time: {sw.Elapsed.TotalMilliseconds:N1} msecs");
 #endif
 
-        }//for
+            return thread_done_count;
+        }
 
-    }//func
+    }
 }
 

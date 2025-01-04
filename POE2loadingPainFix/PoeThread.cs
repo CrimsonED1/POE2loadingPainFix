@@ -14,13 +14,17 @@ namespace POE2loadingPainFix
     {
         protected object SyncRoot = new object();
         protected Thread? Thread;
-        
+
+        protected LimitMode UsedLimitMode = LimitMode.Off;
         protected Config UsedConfig { get; private set; }
+
+        protected TargetProcess UsedTargetProcess { get; private set; }
         protected bool Terminate { get; private set; } = true;
         protected readonly DateTime StartTime = DateTime.Now;
         protected TimeSpan? CycleTime { get; private set; }
 
-        protected int ThreadSleep { get; set; } = 100;
+        protected int ThreadSleep_LimitOn { get; set; } = 10;
+        protected int ThreadSleep_LimitOff { get; set; } = 100;
 
         protected DateTime DT_Cylcle { get; private set; } = DateTime.Now;
         protected DateTime DT_LastCylce { get; private set; } = DateTime.Now.AddMinutes(-1);
@@ -41,6 +45,8 @@ namespace POE2loadingPainFix
                 lock (SyncRoot)
                 {
                     UsedConfig = PoeThreadSharedContext.Instance.Config;
+                    UsedLimitMode = PoeThreadSharedContext.Instance.LimitMode;
+
                 }
 
                 try
@@ -63,11 +69,19 @@ namespace POE2loadingPainFix
 #endif
                 }
 
+
+
+
                 ////Slow when POE2 started, fast when its not!
                 //if (_TP != null)
                 //    Thread.Sleep(100);
                 //else
                 //    Thread.Sleep(1);
+
+                if(UsedLimitMode==LimitMode.On)
+                    Thread.Sleep(ThreadSleep_LimitOn);
+                else 
+                    Thread.Sleep(ThreadSleep_LimitOff);
 
             }//while
 
@@ -108,3 +122,4 @@ namespace POE2loadingPainFix
         }
     }
 }
+
