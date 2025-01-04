@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿#define RECOVERY2
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -30,7 +31,9 @@ namespace POE2loadingPainFix
         private bool IsGuiTaskActive = false;
 
 
+#if RECOVERY
         PoeRecovery? Recovery;
+#endif
         PerformanceCounter? Disk_Time_Counter;
         PerformanceCounter? Process_IO_ReadBytesPerSecCounter;
         PerformanceCounter? CPU_Total_Counter;
@@ -65,16 +68,21 @@ namespace POE2loadingPainFix
         {
             swTimeoutGUI.Start();
 
+#if RECOVERY
             if (Recovery != null)
             {
                 Recovery?.Stop();
                 Recovery = null;
             }
+#endif
 
             base.Start();
+
+#if RECOVERY
             Recovery = new PoeRecovery();
             Recovery.OnThreadException += Recovery_OnThreadException;
             Recovery.Start();
+#endif
 
         }
 
@@ -86,11 +94,13 @@ namespace POE2loadingPainFix
         public override void Stop()
         {
             base.Stop();
+#if RECOVERY
             if (Recovery != null)
             {
                 Recovery.Stop();
                 Recovery = null;
             }
+#endif
             ClearCounters();
         }
 
@@ -180,7 +190,7 @@ namespace POE2loadingPainFix
                     Trace.WriteLine($"{c.CounterName} / {c.CounterHelp}");
                 }
                 Debugging.Step();
-#endif                
+#endif
                 //IO Read Bytes/sec&
 
                 Process_IO_ReadBytesPerSecCounter = new PerformanceCounter("Process", "IO Read Bytes/sec", $"{_TP!.ExeName_NoExtension}", true);
@@ -295,61 +305,77 @@ namespace POE2loadingPainFix
             if (_TP == null)
                 return;
 
+#if RECOVERY
             bool isrecovery = PoeThreadSharedContext.Instance.IsTryRecovery;
 
             if (isrecovery)
             {
                 return;
             }
+#endif
 
             switch (limited)
             {
                 case LimitMode.On:
                     _TP.IsLimitedByApp = true;
 
-                    if (UsedConfig.IsLimit_SetAffinity)
+                    if (UsedConfig.IsLimit_ViaThreads)
                     {
-                        if (limited == LimitMode.On)
-                        {
-                            nint af_limited = CpuTools.GetProcessorAffinity(UsedConfig.InLimitAffinity);
-
-                            if (process.ProcessorAffinity != af_limited)
-                                process.ProcessorAffinity = af_limited;
-                        }
-
+                        ThreadLimit.ThrottleProcess(process);
                     }
-                    if (UsedConfig.IsLimit_RemovePrioBurst)
+                    else
                     {
-                        var cur_prio = process.PriorityBoostEnabled;
-                        if (cur_prio != false)
+                        if (UsedConfig.IsLimit_SetAffinity)
                         {
-                            process.PriorityBoostEnabled = false;
+                            if (limited == LimitMode.On)
+                            {
+                                nint af_limited = CpuTools.GetProcessorAffinity(UsedConfig.InLimitAffinity);
+
+                                if (process.ProcessorAffinity != af_limited)
+                                    process.ProcessorAffinity = af_limited;
+                            }
+
+                        }
+                        if (UsedConfig.IsLimit_RemovePrioBurst)
+                        {
+                            var cur_prio = process.PriorityBoostEnabled;
+                            if (cur_prio != false)
+                            {
+                                process.PriorityBoostEnabled = false;
+                            }
                         }
                     }
-
                     
 
                     break;
                 case LimitMode.Off:
                     _TP.IsLimitedByApp = false;
 
-                    if (UsedConfig.IsLimit_SetAffinity)
+                    if (UsedConfig.IsLimit_ViaThreads)
                     {
-                        nint af_normal = CpuTools.GetProcessorAffinity();
-                        if (process.ProcessorAffinity != _TP.Orginal_Affinity)
-                        {
-                            process.ProcessorAffinity = _TP.Orginal_Affinity;
-                        }
+                        //nothing to do here!
                     }
-
-                    if (UsedConfig.IsLimit_RemovePrioBurst)
+                    else
                     {
-                        var cur_prio = process.PriorityBoostEnabled;
 
-                        bool usedValue = _TP.Orginal_PriorityBoostEnabled;
-                        if (cur_prio != usedValue)
+                        if (UsedConfig.IsLimit_SetAffinity)
                         {
-                            process.PriorityBoostEnabled = usedValue;
+                            nint af_normal = CpuTools.GetProcessorAffinity();
+                            if (process.ProcessorAffinity != _TP.Orginal_Affinity)
+                            {
+                                process.ProcessorAffinity = _TP.Orginal_Affinity;
+                            }
+                        }
+
+                        if (UsedConfig.IsLimit_RemovePrioBurst)
+                        {
+                            var cur_prio = process.PriorityBoostEnabled;
+
+                            bool usedValue = _TP.Orginal_PriorityBoostEnabled;
+                            if (cur_prio != usedValue)
+                            {
+                                process.PriorityBoostEnabled = usedValue;
+                            }
                         }
                     }
 

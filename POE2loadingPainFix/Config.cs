@@ -43,7 +43,8 @@ namespace POE2loadingPainFix
         public bool IsLimit_RemovePrioBurst { get; set; } = true;
         public bool IsLimit_PrioLower { get; set; } = true;
 
-        public bool IsGuard_NotResponding { get; set; } = true;
+        
+        public bool IsLimit_ViaThreads { get; set; } = true;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -58,7 +59,8 @@ namespace POE2loadingPainFix
                 IsLimit_PrioLower = IsLimit_PrioLower,
                 IsLimit_RemovePrioBurst = IsLimit_RemovePrioBurst,
                 IsLimit_SetAffinity = IsLimit_SetAffinity,
-                IsGuard_NotResponding = IsGuard_NotResponding,
+                
+                IsLimit_ViaThreads = IsLimit_ViaThreads,
             };
             return res;
 

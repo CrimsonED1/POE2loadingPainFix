@@ -144,7 +144,14 @@ LegendTextPaint="{Binding LegendTextPaint}">
                                 </Expander>
                             </StackPanel>
                         </Border>
-                        
+
+                        <Border Margin="5,5,5,5">
+                            <StackPanel   Orientation="Vertical">
+                                <CheckBox FontSize="20" Content="Set POE2 Threads to limit" IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_ViaThreads}"/>
+                                <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="add something" FontStyle="Italic"/>
+                            </StackPanel>
+                        </Border>
+
                         <Border Margin="5,5,5,5">
                             <StackPanel   Orientation="Vertical">
                                 <CheckBox FontSize="20" Content="Remove Priorty Boost " IsChecked="{Binding AppConfig.ThrottleConfig.IsLimit_RemovePrioBurst}"/>
