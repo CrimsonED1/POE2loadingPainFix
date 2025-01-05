@@ -16,8 +16,6 @@ namespace POE2loadingPainFix
         public string POE2_LogFile { get; } = "";
 
         public string AffinityCaption { get; private set; } = "";
-        //public bool[] Affinity { get; } = new bool[] { true };
-        public bool IsRunning { get; private set; }
 
         public nint Normal_Affinity { get; private set; }
         public nint Current_Affinity { get; private set; }
@@ -32,7 +30,7 @@ namespace POE2loadingPainFix
 
         public int PID { get; private set; }
 
-        public bool IsLimitedByApp { get; set; } = false;
+        public LimitMode LimitMode { get; set; } = LimitMode.Off;
         public nint Orginal_Affinity { get; }
 
         public ProcessPriorityClass Orginal_PriortyClass { get; }
@@ -91,16 +89,8 @@ namespace POE2loadingPainFix
             //Affinity = process.ProcessorAffinity;            
         }
 
-        internal void Update(Process? process)
+        internal void Update(Process process)
         {
-            if (process == null)
-            {
-                IsRunning = false;
-                PID = -1;
-                Threads = -1;
-                return;
-            }
-            IsRunning = true;
             Threads = process.Threads.Count;
             PID = process.Id;
 

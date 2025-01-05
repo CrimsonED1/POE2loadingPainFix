@@ -26,7 +26,7 @@
             }
         }
 
-        public LimitMode LimitMode { get; set; } = LimitMode.Off;
+        //public LimitMode LimitMode { get; set; } = LimitMode.Off;
         //public bool IsNotResponding { get; set; } = false;
         //public bool IsTryRecovery { get; set; } = false;
 

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 
 namespace POE2loadingPainFix
@@ -22,6 +23,9 @@ namespace POE2loadingPainFix
 
         Type[] Default_Threads = [
             typeof(PoeThreadPFC),
+            typeof(PoeThreadAffinity),
+            typeof(PoeThreadLimitThreads),
+
 #if REOVERY
             typeof(PoeThreadRecovery),
 #endif
@@ -103,8 +107,11 @@ namespace POE2loadingPainFix
             var threadstates = new List<ThreadState>();
             foreach (var thread in SubThreads)
             {
-                threadstates.Add(thread.TakeThreadState());
+                if(thread.IsThreadStateReady)
+                    threadstates.Add(thread.TakeThreadState());
+                
             }
+            threadstates.Add(this.TakeThreadState());
 
 
             int ThreadGuiUpdateMs = 300;
@@ -169,8 +176,17 @@ namespace POE2loadingPainFix
         {
             using (FileStream fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                // Seek 1024 bytes from the end of the file
-                fs.Seek(-targetBytes, SeekOrigin.End);
+                var len = fs.Length;
+                if (len > targetBytes)
+                {
+                    // Seek 1024 bytes from the end of the file
+                    fs.Seek(-targetBytes, SeekOrigin.End);
+                }
+                else
+                {
+                    fs.Seek(0, SeekOrigin.Begin);
+                }
+
                 // read 1024 bytes
                 byte[] bytes = new byte[targetBytes];
                 fs.Read(bytes, 0, (int)targetBytes);
@@ -184,91 +200,6 @@ namespace POE2loadingPainFix
 
 
 
-        private void SetLimit(Process process, LimitMode limited)
-        {
-//            if (UsedTP == null)
-//                return;
-
-//#if RECOVERY
-//            bool isrecovery = PoeThreadSharedContext.Instance.IsTryRecovery;
-
-//            if (isrecovery)
-//            {
-//                return;
-//            }
-//#endif
-
-//            switch (limited)
-//            {
-//                case LimitMode.On:
-//                    UsedTP.IsLimitedByApp = true;
-
-//                    if (UsedConfig.IsLimit_ViaThreads)
-//                    {
-//                        LimitDoneThreads = ThreadLimit.ThrottleProcess(process, UsedConfig.LimitThreads_Pause_MSecs);
-//                    }
-
-//                    if (UsedConfig.IsLimit_SetAffinity)
-//                    {
-//                        if (limited == LimitMode.On)
-//                        {
-//                            nint af_limited = CpuTools.GetProcessorAffinity(UsedConfig.InLimitAffinity);
-
-//                            if (process.ProcessorAffinity != af_limited)
-//                                process.ProcessorAffinity = af_limited;
-//                        }
-
-//                    }
-//                    if (UsedConfig.IsLimit_RemovePrioBurst)
-//                    {
-//                        var cur_prio = process.PriorityBoostEnabled;
-//                        if (cur_prio != false)
-//                        {
-//                            process.PriorityBoostEnabled = false;
-//                        }
-//                    }
-
-
-//                    break;
-//                case LimitMode.Off:
-//                    _TP.IsLimitedByApp = false;
-
-//                    if (UsedConfig.IsLimit_ViaThreads)
-//                    {
-//                        //nothing to do here!
-//                        LimitDoneThreads = 0;
-//                    }
-
-//                    if (UsedConfig.IsLimit_SetAffinity)
-//                    {
-//                        nint af_normal = CpuTools.GetProcessorAffinity();
-//                        if (process.ProcessorAffinity != _TP.Orginal_Affinity)
-//                        {
-//                            process.ProcessorAffinity = _TP.Orginal_Affinity;
-//                        }
-//                    }
-
-//                    if (UsedConfig.IsLimit_RemovePrioBurst)
-//                    {
-//                        var cur_prio = process.PriorityBoostEnabled;
-
-//                        bool usedValue = _TP.Orginal_PriorityBoostEnabled;
-//                        if (cur_prio != usedValue)
-//                        {
-//                            process.PriorityBoostEnabled = usedValue;
-//                        }
-//                    }
-
-
-
-//                    break;
-//                default:
-//                    throw new NotImplementedException();
-
-//            }
-
-
-        }
 
         protected override void Thread_Execute(Process? poeProcess)
         {
@@ -292,6 +223,9 @@ namespace POE2loadingPainFix
 
             //found POE...
 
+            var limitMode = LimitMode.Off;
+            var final_limitMode = LimitMode.Off;
+
             //onetime Init!
             if (UsedTP == null)
             {
@@ -303,7 +237,7 @@ namespace POE2loadingPainFix
                     Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - STARTUP!");
                     Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - process.StartTime {process.StartTime.ToFullDT_German()}");
 #endif
-                    SetLimit(process, LimitMode.On);
+                    limitMode = LimitMode.On;
                     Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - LIMIT DONE!");
 
                     FileInfo fn = new FileInfo(UsedTP.POE2_LogFile);
@@ -316,7 +250,7 @@ namespace POE2loadingPainFix
                 UsedTP.Update(process);
             }
 
-            var limitMode = LimitMode.Off;
+            
 
             if (UsedTP != null && process != null)
             {
@@ -327,10 +261,10 @@ namespace POE2loadingPainFix
                 switch (UsedConfig.LimitKind)
                 {
                     case LimitKind.AlwaysOff:
-                        SetLimit(process, LimitMode.Off);
+                        final_limitMode = LimitMode.Off;
                         break;
                     case LimitKind.AlwaysOn:
-                        SetLimit(process, LimitMode.On);
+                        final_limitMode = LimitMode.On;
                         break;
                     case LimitKind.ViaClientLog:
 
@@ -354,11 +288,11 @@ namespace POE2loadingPainFix
 #endif
                                     if (UsedTP.IsStartedAfterFix)
                                     {
-                                        SetLimit(process, LimitMode.On);
+                                        limitMode = LimitMode.On;
                                     }
                                     else
                                     {
-                                        SetLimit(process, LimitMode.Off);
+                                        limitMode = LimitMode.Off;
                                     }
 
 
@@ -423,7 +357,7 @@ namespace POE2loadingPainFix
                         {
                             case LimitMode.On:
                                 swLimitToNormalDelaySW = null;
-                                SetLimit(process, LimitMode.On);
+                                final_limitMode = LimitMode.On;
                                 Debugging.Step();
                                 break;
                             case LimitMode.Off:
@@ -436,7 +370,7 @@ namespace POE2loadingPainFix
                                 if (swLimitToNormalDelaySW != null && swLimitToNormalDelaySW.Elapsed.TotalSeconds >= UsedConfig.LimitToNormalDelaySecs)
                                 {
                                     //will be called multiple times!!!
-                                    SetLimit(process, LimitMode.Off);
+                                    final_limitMode = LimitMode.Off;
 #if DEBUG2
                                     Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} ResetLimit");
 #endif
@@ -454,6 +388,7 @@ namespace POE2loadingPainFix
                 //_TP.Update(process);
 
 
+                UsedTP.LimitMode = final_limitMode;
             }//process!=null
 
 
@@ -461,7 +396,6 @@ namespace POE2loadingPainFix
 
 
             ThreadState.AddMeasure(Counter_Limited, limitMode == LimitMode.On ? 1 : 0);
-            PoeThreadSharedContext.Instance.LimitMode = limitMode;
             PoeThreadSharedContext.Instance.TargetProcess = UsedTP;
 
 

@@ -39,8 +39,8 @@ namespace POE2loadingPainFix
         public string PoeExes => PoeTools.POE_ExeNames.ToSingleString("/");
 
         public Visibility VisWaitingExe => State == null || (State != null && State.TargetProcess == null) ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility VisNormal => State != null && State.TargetProcess != null && !State.TargetProcess.IsLimitedByApp ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility VisLimited => State != null && State.TargetProcess != null && State.TargetProcess.IsLimitedByApp ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility VisNormal => State != null && State.TargetProcess != null && State.TargetProcess.LimitMode==LimitMode.Off ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility VisLimited => State != null && State.TargetProcess != null && State.TargetProcess.LimitMode == LimitMode.On ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisNotResponding { get; private set; } = Visibility.Collapsed;
 
 
@@ -350,7 +350,7 @@ namespace POE2loadingPainFix
                     //smmothen cpu...
                     var medianCPU = new DateTimePoint[0];
                     {
-                        var values_cpu = State.GetMeasureValues(PoeThreadPFC.Counter_IORead);
+                        var values_cpu = State.GetMeasureValues(PoeThreadPFC.Counter_CpuUsage);
                         if (values_cpu.Count > 0)
                         {
                             var values = values_cpu.Select(x => new DateTimePoint(x.DT, x.Value)).ToArray();
@@ -410,6 +410,8 @@ namespace POE2loadingPainFix
 
         private void Config_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (_IsInit)
+                return;
             Config newConfig = (Config)AppConfig.ThrottleConfig.Clone();
             newConfig.InLimitAffinity = AppConfig.InLimitAffinity.Select(x => x.IsSet).ToArray();
 
@@ -418,6 +420,8 @@ namespace POE2loadingPainFix
             OnPropertyChanged(nameof(IsAlwaysOff));
             OnPropertyChanged(nameof(IsAlwaysOn));
             OnPropertyChanged(nameof(IsViaPoe2LogFile));
+
+            AppConfig.SaveAppConfig(AppConfig);
         }
 
 

@@ -30,8 +30,8 @@ namespace POE2loadingPainFix
         protected bool Terminate { get; private set; } = true;
         protected readonly DateTime StartTime = DateTime.Now;
 
-        protected int ThreadSleep_LimitOn { get; set; } = 10;
-        protected int ThreadSleep_LimitOff { get; set; } = 100;
+        protected int Next_ThreadSleep_LimitOn { get; set; } = 10;
+        protected int Next_ThreadSleep_LimitOff { get; set; } = 100;
 
 
         protected PoeThread()
@@ -39,6 +39,8 @@ namespace POE2loadingPainFix
             UsedConfig = PoeThreadSharedContext.Instance.Config;
             ThreadState = new ThreadState(this.GetType());
         }
+
+        public bool IsThreadStateReady { get; set; } = false;
 
         private ThreadState _ThreadState;
         protected ThreadState ThreadState
@@ -80,8 +82,13 @@ namespace POE2loadingPainFix
             {
                 sw.Restart();
                 UsedConfig = PoeThreadSharedContext.Instance.Config;
-                CurrentLimitMode = PoeThreadSharedContext.Instance.LimitMode;
                 UsedTP = PoeThreadSharedContext.Instance.TargetProcess;
+
+                Next_ThreadSleep_LimitOn = 10;
+                Next_ThreadSleep_LimitOff = 100;
+
+                if (UsedTP == null)
+                    IsThreadStateReady = false;
 
                 lock (SyncState) //lock until cycle done
                 {
@@ -103,7 +110,8 @@ namespace POE2loadingPainFix
                             }
                             catch (Exception ex)
                             {
-
+                                Debugging.Step();
+                                UsedTP = null;
                             }
                         }
 
@@ -111,11 +119,13 @@ namespace POE2loadingPainFix
                         Thread_Execute(process);
                         ThreadState.DT_LastCylce = ThreadState.DT_Cylcle;
                         ThreadState.Exception = null;
-
+                        if(UsedTP!=null)
+                            IsThreadStateReady = true;
                     }
                     catch (Exception ex)
                     {
                         ThreadState.Exception = ex;
+                        IsThreadStateReady = true;
                     }
                     finally
                     {
@@ -123,7 +133,7 @@ namespace POE2loadingPainFix
                         ThreadState.CycleTime = sw.Elapsed;
 #if DEBUG
                         if (ThreadState.CycleTime > TimeSpan.FromMilliseconds(150))
-                            Trace.WriteLine($"CycleTime High! {ThreadState.CycleTime.Value.TotalMilliseconds}");
+                            Trace.WriteLine($"CycleTime High! Thread: {ThreadState.ThreadType.Name} : {ThreadState.CycleTime.Value.TotalMilliseconds}");
 #endif
                     }
 
@@ -138,9 +148,9 @@ namespace POE2loadingPainFix
 
                 ////Faster when POE2 is limited
                 if (CurrentLimitMode==LimitMode.On)
-                    Thread.Sleep(ThreadSleep_LimitOn);
+                    Thread.Sleep(Next_ThreadSleep_LimitOn);
                 else 
-                    Thread.Sleep(ThreadSleep_LimitOff);
+                    Thread.Sleep(Next_ThreadSleep_LimitOff);
 
             }//while
 

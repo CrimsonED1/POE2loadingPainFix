@@ -10,13 +10,8 @@ namespace POE2loadingPainFix
         {
         }
 
-        public override void Start()
-        {
-            ThreadSleep_LimitOn = 10;
-            base.Start();
-        }
 
-        private ProcessPriorityClass Limited_PriorityClass = ProcessPriorityClass.BelowNormal;
+        
 
         private DateTime LastResponseDT = DateTime.Now;
 
@@ -25,42 +20,17 @@ namespace POE2loadingPainFix
         private Stopwatch? Recovery_Restart_DelayTime;
         private Stopwatch? Recovery_MaximumTime;
 
-        private ProcessPriorityClass GetNormal_PriorityClass()
-        {
-            var limitmode = PoeThreadSharedContext.Instance.LimitMode;
-            ProcessPriorityClass usedValue = ProcessPriorityClass.Normal;
-            switch (limitmode)
-            {
-                case LimitMode.Off:
-                    if (UsedConfig.IsLimit_PrioLower)
-                    {
-                        usedValue = ProcessPriorityClass.Normal;
-                    }
-                    break;
-                case LimitMode.On:
-                    if (UsedConfig.IsLimit_PrioLower)
-                    {
-                        usedValue = Limited_PriorityClass;
-                    }
-                    break;
-                default:
-                    throw new NotImplementedException();
-
-
-
-            }
-
-            return usedValue;
-        }
-
+       
         protected override void Thread_Execute(Process? poeProcess)
         {
 
-            if (poeProcess == null)
+            if (poeProcess == null || UsedTP == null)
             {
                 Debugging.Step();
                 return;
             }
+            Next_ThreadSleep_LimitOn = 2;
+
 
             bool responding = poeProcess.Responding;
             bool IsRealTimeSet = false;
@@ -88,12 +58,11 @@ namespace POE2loadingPainFix
             {
                 LastResponseDT = DateTime.Now;
 
-                var usedValue = GetNormal_PriorityClass();
 
                 //set prio
-                if (cur_prio != usedValue)
+                if (cur_prio == ProcessPriorityClass.RealTime)
                 {
-                    poeProcess.PriorityClass = usedValue;
+                    poeProcess.PriorityClass = ProcessPriorityClass.Normal;
                 }
                 PoeThreadSharedContext.Instance.IsTryRecovery = false;
                 IsRealTimeSet = false;
@@ -144,7 +113,7 @@ namespace POE2loadingPainFix
                         Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - FALLBACK! Set to realtime not working!");
 #endif
                         //FALLBACK, POE doesnt go to normal state!
-                        var usedValue = GetNormal_PriorityClass();
+                        var usedValue = ProcessPriorityClass.Normal;
                         poeProcess.PriorityClass = usedValue;
                         Recovery_MaximumTime = null;
                         IsRealTimeSet = false;
