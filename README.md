@@ -5,7 +5,9 @@ If you found your way here, this is what you get here:
 <ul>
       <li>while loading a level in Path of Exile 2, your PC freezes complete</li>
       <li>only a hard reset is working</li>
-      <li>you used other tools to limit the CPU while loading a level in POE2, but its anoying to set affinity(what logical processors are used by POE2) manually </li>
+      <li>you used other tools to limit the CPU while loading a level in POE2, but its anoying to set affinity (what logical processors are used by POE2) or CPU limiting like 
+            <a href="https://mion.yosei.fi/BES/">BES – Battle Encoder Shirasé</a>
+  manually </li>
 </ul>
 
 
@@ -15,7 +17,17 @@ It occures on Amd ***X3D, Windows 11 24H2, and some other constellations
 <h1>
 $${\color{green}Here \space is \space your \space new \space friend \space : \space POE2loadingPainFix}$$
 </h1>
-<H2>this tool, sets affinity, and restores normal affinity <del>on disk/process disk load.</del> depending on entries of the POE2 logfile. On affinity set, you will have less FPS, to compensate this, the program tries to set affinity an go back to normal when its save </H2>
+
+<H2>
+      This App sets "Limiting" to the POE2 Process.            
+</H2>
+<H3>Depending on entries of the POE2 logfile. Limit is only done while starting POE2 and loading levels</H3>
+<H4>Limiting Options:</H4>
+<ul>
+      <li>Limiting threads. This is mostly like like 
+            <a href="https://mion.yosei.fi/BES/">BES – Battle Encoder Shirasé</a> is doing. Getting every thread of a process, then suspend it, wait, then resume it (since V0.9 and now default). </li>
+      <li>Limiting via affinity (not recommended)</li>
+</ul>
 
 <H3>Supported versions:</H3>
       <ul>
@@ -28,7 +40,7 @@ $${\color{green}Here \space is \space your \space new \space friend \space : \sp
 <BR>
 -----------------
 
-Current Version: 0.8
+Current Version: 0.9
 
 <p>
 <a href="https://github.com/CrimsonED1/POE2loadingPainFix/releases">
@@ -44,15 +56,25 @@ Current Version: 0.8
 (if you like it, maybe you wanne support this project)
 <br><br>
 
-<H1>Main Screen</H1>
-<img src="https://github.com/CrimsonED1/POE2loadingPainFix/blob/main/README_Sources/images/1.png?raw=true" alt="mainscreen">
-<H1>Functions:</H1>
+<H1>Easy/Expert</H1>
+<img src="https://github.com/user-attachments/assets/56dc8b14-e44f-48c9-b79e-a3d16466946f">
+<H2>Easy is designed to users that are not well known computers.NOTE! Switching from expert to easy will restore default settings!</H2>
+
+<H1>Main Screen (Easy Mode)</H1>
+<img src="https://github.com/user-attachments/assets/8afa7d58-3a56-47f7-872e-743497cc3df9">
+
+
+<H1>Main Screen (Expoert)</H1>
+
+<img src="https://github.com/user-attachments/assets/00b450d9-29d4-4a40-a543-c5b1cc480390">
+
+<H1>Expert Functions:</H1>
 <img src="https://github.com/CrimsonED1/POE2loadingPainFix/blob/main/README_Sources/images/auto_functions.png?raw=true" alt="autos">
 
 <ul>
-      <li>always on: affinity is always set to the selected processors</li>
-      <li>always off: the program doesnt do any affinity</li>
-      <li>auto-limit by POE2 Logfile: detects if a level is changed. And changes affinity back if loading is done</li>
+      <li>always on: limitations are always set </li>
+      <li>always off: the program doesnt do any limitations</li>
+      <li>auto-limit by POE2 Logfile: detects if a level is changed. And changes limitations back if loading is done</li>
       
 </ul>
 
