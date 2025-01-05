@@ -374,14 +374,34 @@ namespace POE2loadingPainFix
 
         }
 
+        private bool IsTaskSizechanged = false;
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (_IsInit)
                 return;
-            AppConfig.StoreWindowPosition(this);
+            
 #if DEBUG
             this.Title = $"{OrgTitle} DEBUG-H,W: {this.Width},{this.Height}";
 #endif
+
+            if (!IsTaskSizechanged)
+            {
+                IsTaskSizechanged = true;
+                Task.Run(() =>
+                {
+                    Thread.Sleep(1000);
+
+                    Dispatcher.Invoke(() =>
+                    {
+#if DEBUG
+                        Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - Window Size changed");
+#endif
+                        AppConfig.StoreWindowPosition(this);
+                    });
+
+                    IsTaskSizechanged = false;
+                });
+            }
         }
 
         private static double[] GetSeparators()
