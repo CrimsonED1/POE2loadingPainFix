@@ -380,7 +380,14 @@ namespace POE2loadingPainFix
                 //_TP.Update(process);
 
 
-                UsedTP.LimitMode = final_limitMode;
+#if DEBUG
+                if (final_limitMode != UsedTP.LimitMode) 
+                    {
+                        Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - LIMIT CHANGED TO: {final_limitMode} ########################");
+                    }
+#endif
+
+                    UsedTP.LimitMode = final_limitMode;
             }//process!=null
 
 

@@ -49,6 +49,7 @@ namespace POE2loadingPainFix
             if (UsedTP == null || poeProcess==null)
                 return;
 
+            AddMeasure(Counter_AffinityPercent, UsedTP.Current_Affinity_Percent);
 
             bool isrecovery = PoeThreadSharedContext.Instance.IsTryRecovery;
             if (isrecovery)

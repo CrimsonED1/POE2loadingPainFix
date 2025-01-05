@@ -10,7 +10,8 @@ namespace POE2loadingPainFix
 {
     public class PoeThreadLimitThreads:PoeThread
     {
-        public const string Counter_DoneThreads = "LIMIT_THREADS_DONE";
+        public const string Counter_LimitedThreads = "LIMIT_THREADS_LIMITED";
+        public const string Counter_ActiveThreads = "LIMIT_THREADS_ACTIVE";
         public const string Counter_TotalThreads = "LIMIT_THREADS_TOTAL";
 
         public override string Caption => "LTT";
@@ -54,10 +55,15 @@ namespace POE2loadingPainFix
             var caption = grp.Select(x => $"{x.State}={x.Count}").ToSingleString(", ");
             Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - Threads: {caption}");
 #endif
-            
 
-            AddMeasure(Counter_DoneThreads, limitedThreads);
+            var cur_active = grp.FirstOrDefault(x => x.State == System.Diagnostics.ThreadState.Running);
+            int active = 0;
+            if (cur_active != null)
+                active = cur_active.Count;
+
+            AddMeasure(Counter_LimitedThreads, limitedThreads);
             AddMeasure(Counter_TotalThreads, totalThreads);
+            AddMeasure(Counter_ActiveThreads, active);
 
 
         }

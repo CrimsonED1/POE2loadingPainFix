@@ -1,21 +1,12 @@
 ﻿using System.ComponentModel;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace DummyPOE
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class WindowDummy : Window,INotifyPropertyChanged
+    public partial class WindowDummy : Window, INotifyPropertyChanged
     {
         string PathLog;
         string sResetLimit = "[SHADER] Delay: ON";
@@ -23,6 +14,9 @@ namespace DummyPOE
         string sSetLimit2 = "[SHADER] Delay: OFF";
 
         public string LevelState { get; set; } = "";
+        public bool Terminate { get; private set; }
+
+        private Thread Thread1;
 
         public WindowDummy()
         {
@@ -38,15 +32,40 @@ namespace DummyPOE
             if (!System.IO.File.Exists(PathLog))
                 System.IO.File.WriteAllText(PathLog, "asdf");
 
+            this.Closed += WindowDummy_Closed;
+
             //btLevelDone_Click(this, null);
             this.DataContext = this;
+
+            Terminate = false;
+            Thread1 = new Thread(new ParameterizedThreadStart(Thread_Execute));
+            Thread1.IsBackground = true;
+            Thread1.Start();
         }
 
+        private void WindowDummy_Closed(object? sender, EventArgs e)
+        {
+            Terminate = true;
+            Thread1.Join();
+        }
 
+        private void Thread_Execute(object? obj)
+        {
+            while (!Terminate)
+            {
+                for (int i = 0; i < 1000; i++)
+                {
+                    var d = Math.Pow(10, i);
+                    var d2 = Math.PI * d;
+
+                }
+                //Thread.Sleep(10);
+            }
+        }
 
         private void btLevelStart_Click(object sender, RoutedEventArgs? e)
         {
-            System.IO.File.AppendAllLines(PathLog,[$"{sSetLimit1}"]);
+            System.IO.File.AppendAllLines(PathLog, [$"{sSetLimit1}"]);
             LevelState = "Loading Level...";
         }
 

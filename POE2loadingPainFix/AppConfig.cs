@@ -39,6 +39,9 @@ namespace POE2loadingPainFix
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        public bool IsGraphMain_Expanded { get; set; } = true;
+        public bool IsGraphThreads_Expanded { get; set; }= true;
+
         public string Version { get; set; } = "";
 
         [JsonIgnore]

@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace POE2loadingPainFix
 {
@@ -23,14 +22,15 @@ namespace POE2loadingPainFix
         private static extern bool CloseHandle(IntPtr hObject);
 
         private const int THREAD_SUSPEND_RESUME = 0x0002;
-
+        private const int SYNCHRONIZE = 0x00100000;
+        private const int STANDARD_RIGHTS_REQUIRED = 0x000F0000;
 
         public static int ThrottleProcess(Process process, int targetdelayMS)
         {
             // Replace with the target process ID and thread ID
             int targetProcessId = process.Id;
 
-            
+
 
             Process targetProcess = Process.GetProcessById(targetProcessId);
             var threads = new List<ProcessThread>();
@@ -39,15 +39,30 @@ namespace POE2loadingPainFix
             int thread_count = threads.Count;
             int thread_done_count = 0;
 
-            var sw  = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
             foreach (ProcessThread thread in threads)
             {
+
+
                 string step = "";
                 int thread_id = thread.Id;
                 try
                 {
                     step = "Pre Open";
-                    IntPtr hThread = OpenThread(THREAD_SUSPEND_RESUME, false, (uint)thread_id);
+                    //from BES
+                    IntPtr hThread = OpenThread(STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFFF,false, (uint)thread_id);
+
+                    
+                    if (hThread == IntPtr.Zero)
+                    {
+                        //from BES
+                        hThread = OpenThread(STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0x3FF, false, (uint)thread_id);
+                        if (hThread == IntPtr.Zero)
+                        {
+                            //default version, should work with mainThread (GUI thread)
+                            hThread = OpenThread(THREAD_SUSPEND_RESUME, false, (uint)thread_id);
+                        }
+                    }
 
                     if (hThread != IntPtr.Zero)
                     {

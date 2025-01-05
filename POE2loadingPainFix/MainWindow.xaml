@@ -81,7 +81,7 @@
                     </Viewbox>
                 </GroupBox>
 
-                <GroupBox Header="Performance graphs">
+                <Expander Header="Performance graphs" IsExpanded="{Binding AppConfig.IsGraphMain_Expanded}">
                     <StackPanel>
                         <Border Margin="5,5,5,5">
                             <CheckBox FontSize="15" Content="Update graphs" IsChecked="{Binding IsUpdateGraphs}"/>
@@ -98,10 +98,6 @@
                             <Label Content="POE2 Usage (PFC: IO Read MBytes/sec):" FontSize="15"/>
                             <Label Content="{Binding State.IOReadCaption}" FontSize="15"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="POE2 (Limited Threads / Total Threads" FontSize="15"/>
-                            <Label Content="{Binding State.ThreadsCaption}" FontSize="15"/>
-                        </StackPanel>
 
                         <Border Height="300">
                             <lvc:CartesianChart
@@ -113,7 +109,30 @@ LegendTextPaint="{Binding LegendTextPaint}">
                             </lvc:CartesianChart>
                         </Border>
                     </StackPanel>
-                </GroupBox>
+                </Expander>
+
+                <Expander Header="Thread graph" IsExpanded="{Binding AppConfig.IsGraphThreads_Expanded}">
+                    <StackPanel>
+                        <Border Margin="5,5,5,5">
+                            <CheckBox FontSize="15" Content="Update graphs" IsChecked="{Binding IsUpdateGraphsThreads}"/>
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Threads:" FontSize="15"/>
+                            <Label Content="{Binding State.ThreadsCaption}" FontSize="15"/>
+                        </StackPanel>
+                        <Border Height="150">
+                            <lvc:CartesianChart
+            SyncContext="{Binding SyncRoot}"
+            Series="{Binding SeriesThreads}"
+            XAxes="{Binding XAxes}" LegendPosition="Right" LegendBackgroundPaint="{Binding LedgendBackgroundPaint}"
+LegendTextPaint="{Binding LegendTextPaint}">
+
+                            </lvc:CartesianChart>
+                        </Border>
+                    </StackPanel>
+                </Expander>
+
 
                 <GroupBox Header="Limit Settings">
                     <StackPanel>

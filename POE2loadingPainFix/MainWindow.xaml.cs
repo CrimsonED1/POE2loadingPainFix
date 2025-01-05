@@ -39,7 +39,7 @@ namespace POE2loadingPainFix
         public string PoeExes => PoeTools.POE_ExeNames.ToSingleString("/");
 
         public Visibility VisWaitingExe => State == null || (State != null && State.TargetProcess == null) ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility VisNormal => State != null && State.TargetProcess != null && State.TargetProcess.LimitMode==LimitMode.Off ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility VisNormal => State != null && State.TargetProcess != null && State.TargetProcess.LimitMode == LimitMode.Off ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisLimited => State != null && State.TargetProcess != null && State.TargetProcess.LimitMode == LimitMode.On ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisNotResponding { get; private set; } = Visibility.Collapsed;
 
@@ -63,16 +63,22 @@ namespace POE2loadingPainFix
             set => AppConfig.ThrottleConfig.LimitKind = LimitKind.ViaClientLog;
         }
         public bool IsUpdateGraphs { get; set; } = true;
+        public bool IsUpdateGraphsThreads { get; set; } = true;
 
         public int CPUs { get; set; }
 
         public ObservableCollection<ISeries> Series { get; set; }
+        public ObservableCollection<ISeries> SeriesThreads { get; set; }
         private readonly List<DateTimePoint> _Values_Disk = [];
         private readonly List<DateTimePoint> _Values_Cpu = [];
         private readonly List<DateTimePoint> _Values_IORead = [];
         private readonly List<DateTimePoint> _Values_Limited = [];
         private readonly List<DateTimePoint> _Values_NotResponding = [];
         private readonly List<DateTimePoint> _Values_Affinity = [];
+        private readonly List<DateTimePoint> _Values_Threads_Limited = [];
+        private readonly List<DateTimePoint> _Values_Threads_LimitedONOFF = [];
+        private readonly List<DateTimePoint> _Values_Threads_Active = [];
+        private readonly List<DateTimePoint> _Values_Threads_Total = [];
 
         private readonly DateTimeAxis _customAxis;
 
@@ -109,6 +115,7 @@ namespace POE2loadingPainFix
 
 
             AppConfig.ThrottleConfig.PropertyChanged += Config_PropertyChanged;
+            AppConfig.PropertyChanged += AppConfig_PropertyChanged;
             PoeThreadSharedContext.Instance.Config = (Config)AppConfig.ThrottleConfig.Clone();
 
             _PoeThreadMain = new PoeThreadMain();
@@ -178,6 +185,44 @@ namespace POE2loadingPainFix
 
             ];
 
+
+            //##################################################
+
+            SeriesThreads = [
+                       new LineSeries<DateTimePoint>
+            {
+                Values = _Values_Threads_LimitedONOFF,
+                Fill = null,
+                Stroke = new SolidColorPaint(SKColors.Red) { StrokeThickness = 3 },
+
+                Name="Limited (1/0)",
+                GeometryFill = null,
+                GeometryStroke = null
+            },
+
+
+                        new LineSeries<DateTimePoint>
+            {
+                Values = _Values_Threads_Active,
+                Fill = null,
+                Name="Threads active",
+                Stroke = new SolidColorPaint(SKColors.Green) { StrokeThickness = 3 },
+                GeometryFill = null,
+                GeometryStroke = null
+            },
+
+            new LineSeries<DateTimePoint>
+            {
+                Values = _Values_Threads_Limited,
+                Fill = null,
+                Name = "Threads limited",
+                Stroke = new SolidColorPaint(SKColors.Purple) { StrokeThickness = 3},
+                GeometryFill = null,
+                GeometryStroke = null
+            },
+            ];
+
+
             _customAxis = new DateTimeAxis(TimeSpan.FromSeconds(1), Formatter)
             {
                 CustomSeparators = GetSeparators(),
@@ -208,6 +253,12 @@ namespace POE2loadingPainFix
             CheckNewVersion();
         }
 
+        private void AppConfig_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (!_IsInit)
+                AppConfig.SaveAppConfig(AppConfig);
+
+        }
 
         public SolidColorPaint LegendTextPaint { get; set; } =
                 new SolidColorPaint
@@ -294,6 +345,131 @@ namespace POE2loadingPainFix
 
 
 
+        private void GuiUpdate_GraphsMain(DateTime cur)
+        {
+            if (!IsUpdateGraphs)
+                return;
+            if (State == null)
+                return;
+
+
+
+            {
+
+                var values = State.GetMeasureValues(PoeThreadPFC.Counter_DiskUsage);
+                if (values.Count > 0)
+                    _Values_Disk.AddRange(values.Select(x => new DateTimePoint(x.DT, x.Value)));
+                _Values_Disk.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+            }
+
+            {
+                var values = State.GetMeasureValues(PoeThreadPFC.Counter_IORead);
+                if (values.Count > 0)
+                    _Values_IORead.AddRange(values.Select(x => new DateTimePoint(x.DT, x.Value)));
+                _Values_IORead.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+            }
+
+
+
+            //smmothen cpu...
+            var medianCPU = new DateTimePoint[0];
+            {
+                var values_cpu = State.GetMeasureValues(PoeThreadPFC.Counter_CpuUsage);
+                if (values_cpu.Count > 0)
+                {
+                    var values = values_cpu.Select(x => new DateTimePoint(x.DT, x.Value)).ToArray();
+                    double[] values_d = values.Select(x => x.Value!.Value).ToArray();
+                    DateTime dtmin = values.Min(x => x.DateTime);
+                    DateTime dtmax = values.Max(x => x.DateTime);
+                    TimeSpan diff = dtmax - dtmin;
+                    var median = values_d.Median();
+
+                    medianCPU = new[] { /*new DateTimePoint(dtmin, median),*/ new DateTimePoint(dtmax, median) };
+                }
+
+
+            }
+            _Values_Cpu.AddRange(medianCPU);
+            _Values_Cpu.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+
+
+
+            {
+                var values = State.GetMeasureValues(PoeThreadAffinity.Counter_AffinityPercent);
+                if (values.Count > 0)
+                    _Values_Affinity.AddRange(values.Select(x => new DateTimePoint(x.DT, x.Value)));
+                _Values_Affinity.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+            }
+
+            {
+                var values = State.GetMeasureValues(PoeThreadMain.Counter_Limited);
+                if (values.Count > 0)
+                    _Values_Limited.AddRange(values.Select(x => new DateTimePoint(x.DT, x.Value > 0 ? 100 : 0)));
+                _Values_Limited.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+            }
+
+
+            {
+                var values = State.GetMeasureValues(PoeThreadRecovery.Counter_NotResponding);
+                if (values.Count > 0)
+                    _Values_NotResponding.AddRange(values.Select(x => new DateTimePoint(x.DT, x.Value > 0 ? 100 : 0)));
+                _Values_NotResponding.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+                if (_Values_NotResponding.Count > 0)
+                {
+                    var lastNotResponding = _Values_NotResponding.Last();
+
+                    var oldVisValue = VisNotResponding;
+                    VisNotResponding = lastNotResponding.Value > 0 ? Visibility.Visible : Visibility.Collapsed;
+                    if (oldVisValue != VisNotResponding)
+                        OnPropertyChanged(nameof(VisNotResponding));
+                }
+            }
+        }
+        
+
+        private void GuiUpdate_GraphsThreads(DateTime cur)
+        {
+            if (!IsUpdateGraphsThreads)
+                return;
+            if (State == null)
+                return;
+
+            //#################################################
+
+            {
+                var values = State.GetMeasureValues(PoeThreadMain.Counter_Limited);
+                if (values.Count > 0)
+                    _Values_Threads_LimitedONOFF.AddRange(values.Select(x => new DateTimePoint(x.DT, x.Value > 0 ? 10 : 0)));
+                _Values_Threads_LimitedONOFF.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+            }
+            {
+                var values = State.GetMeasureValues(PoeThreadLimitThreads.Counter_ActiveThreads);
+                if (values.Count > 0)
+                    _Values_Threads_Active.AddRange(values.Select(x => new DateTimePoint(x.DT, x.Value)));
+                _Values_Threads_Active.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+            }
+
+            {
+                var values = State.GetMeasureValues(PoeThreadLimitThreads.Counter_LimitedThreads);
+                if (values.Count > 0)
+                    _Values_Threads_Limited.AddRange(values.Select(x => new DateTimePoint(x.DT, x.Value)));
+                _Values_Threads_Limited.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+            }
+
+            {
+                var values = State.GetMeasureValues(PoeThreadLimitThreads.Counter_TotalThreads);
+                if (values.Count > 0)
+                    _Values_Threads_Total.AddRange(values.Select(x => new DateTimePoint(x.DT, x.Value)));
+                _Values_Threads_Total.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+            }
+
+
+
+
+
+        }
+
+
         private void PoeThreadMain_GuiUpdate(object? sender, State e)
         {
             if (!Dispatcher.CheckAccess()) // CheckAccess returns true if you're on the dispatcher thread
@@ -329,82 +505,17 @@ namespace POE2loadingPainFix
                 OnPropertyChanged(nameof(VisError));
             }
 
-            lock (SyncRoot)
+            if (State.AllMeasures.Count > 0)
             {
-                var cur = DateTime.Now;
-
-
-                if (State.AllMeasures.Count > 0 && IsUpdateGraphs)
+                lock (SyncRoot)
                 {
-                    var values_disk = State.GetMeasureValues(PoeThreadPFC.Counter_DiskUsage);
-                    if (values_disk.Count > 0)
-                        _Values_Disk.AddRange(values_disk.Select(x => new DateTimePoint(x.DT, x.Value)));
-                    _Values_Disk.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
+                    var cur = DateTime.Now;
+                    GuiUpdate_GraphsMain(cur);
+                    GuiUpdate_GraphsThreads(cur);
+                    // we need to update the separators every time we add a new point 
+                    _customAxis.CustomSeparators = GetSeparators();
 
-                    var values_IO = State.GetMeasureValues(PoeThreadPFC.Counter_IORead);
-                    if (values_IO.Count > 0)
-                        _Values_IORead.AddRange(values_IO.Select(x => new DateTimePoint(x.DT, x.Value)));
-                    _Values_IORead.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
-
-
-
-
-                    //smmothen cpu...
-                    var medianCPU = new DateTimePoint[0];
-                    {
-                        var values_cpu = State.GetMeasureValues(PoeThreadPFC.Counter_CpuUsage);
-                        if (values_cpu.Count > 0)
-                        {
-                            var values = values_cpu.Select(x => new DateTimePoint(x.DT, x.Value)).ToArray();
-                            double[] values_d = values.Select(x => x.Value!.Value).ToArray();
-                            DateTime dtmin = values.Min(x => x.DateTime);
-                            DateTime dtmax = values.Max(x => x.DateTime);
-                            TimeSpan diff = dtmax - dtmin;
-                            var median = values_d.Median();
-
-                            medianCPU = new[] { /*new DateTimePoint(dtmin, median),*/ new DateTimePoint(dtmax, median) };
-                        }
-
-
-                    }
-                    _Values_Cpu.AddRange(medianCPU);
-                    _Values_Cpu.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
-
-
-
-                    var values_AF = State.GetMeasureValues(PoeThreadAffinity.Counter_AffinityPercent);
-                    if (values_AF.Count > 0)
-                        _Values_Affinity.AddRange(values_AF.Select(x => new DateTimePoint(x.DT, x.Value)));
-                    _Values_Affinity.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
-
-                    var values_LIM = State.GetMeasureValues(PoeThreadMain.Counter_Limited);
-                    if (values_LIM.Count > 0)
-                        _Values_Limited.AddRange(values_LIM.Select(x => new DateTimePoint(x.DT, x.Value > 0 ? 100 : 0)));
-                    _Values_Limited.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
-
-
-
-
-                    var values_NR = State.GetMeasureValues(PoeThreadRecovery.Counter_NotResponding);
-                    if (values_NR.Count > 0)
-                        _Values_NotResponding.AddRange(values_NR.Select(x => new DateTimePoint(x.DT, x.Value > 0 ? 100 : 0)));
-                    _Values_NotResponding.RemoveAll(x => (cur - x.DateTime).TotalSeconds > 30);
-                    if (_Values_NotResponding.Count > 0)
-                    {
-                        var lastNotResponding = _Values_NotResponding.Last();
-
-                        var oldVisValue = VisNotResponding;
-                        VisNotResponding = lastNotResponding.Value > 0 ? Visibility.Visible : Visibility.Collapsed;
-                        if (oldVisValue != VisNotResponding)
-                            OnPropertyChanged(nameof(VisNotResponding));
-                    }
-
-                } //measures..
-
-
-                // we need to update the separators every time we add a new point 
-                _customAxis.CustomSeparators = GetSeparators();
-
+                }
             }
 
 
@@ -477,7 +588,7 @@ namespace POE2loadingPainFix
                 lines.Add($"CPU = {CpuCaption}");
                 if (this.State != null)
                 {
-                    if(this.State.TargetProcess!=null)
+                    if (this.State.TargetProcess != null)
                         lines.Add($"POE2 = {this.State.TargetProcess.ImagePath}");
                     lines.Add($"CycleTimes = {this.State.CycleTimeCaption}");
                 }

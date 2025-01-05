@@ -22,7 +22,7 @@ namespace POE2loadingPainFix
         public string CpuUsageCaption => $"{GetLastMeasureValue(PoeThreadPFC.Counter_CpuUsage):N0} %";
         public string DiskUsageCaption => $"{GetLastMeasureValue(PoeThreadPFC.Counter_DiskUsage):N0} %";
         public string IOReadCaption => $"{GetLastMeasureValue(PoeThreadPFC.Counter_IORead):N2} MB/s";
-        public string ThreadsCaption => $"{GetLastMeasureValue(PoeThreadLimitThreads.Counter_DoneThreads)} / {GetLastMeasureValue(PoeThreadLimitThreads.Counter_TotalThreads)}"; 
+        public string ThreadsCaption => $"Limited: {GetLastMeasureValue(PoeThreadLimitThreads.Counter_LimitedThreads)} / Active: {GetLastMeasureValue(PoeThreadLimitThreads.Counter_ActiveThreads)} / Total: {GetLastMeasureValue(PoeThreadLimitThreads.Counter_TotalThreads)}"; 
 
         public string LimitCaption { get; set; } = "";
 
