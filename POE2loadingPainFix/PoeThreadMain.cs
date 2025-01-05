@@ -1,5 +1,4 @@
-﻿#define RECOVERY2
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -11,24 +10,19 @@ namespace POE2loadingPainFix
     public class PoeThreadMain : PoeThread
     {
         public const string Counter_Limited = "LIMITED";
-
+        public override string Caption => "M";
 
         Stopwatch swTimeoutGUI = new Stopwatch();
         Stopwatch? swLimitToNormalDelaySW = null;
 
         private bool IsGuiTaskActive = false;
 
-        private int LimitDoneThreads = 0;
-
 
         Type[] Default_Threads = [
             typeof(PoeThreadPFC),
             typeof(PoeThreadAffinity),
             typeof(PoeThreadLimitThreads),
-
-#if REOVERY
             typeof(PoeThreadRecovery),
-#endif
         ];
 
         List<PoeThread> SubThreads = new List<PoeThread>();
@@ -107,9 +101,7 @@ namespace POE2loadingPainFix
             var threadstates = new List<ThreadState>();
             foreach (var thread in SubThreads)
             {
-                if(thread.IsThreadStateReady)
-                    threadstates.Add(thread.TakeThreadState());
-                
+                threadstates.Add(thread.TakeThreadState());
             }
             threadstates.Add(this.TakeThreadState());
 
@@ -395,11 +387,11 @@ namespace POE2loadingPainFix
             Debugging.Step();
 
 
-            ThreadState.AddMeasure(Counter_Limited, limitMode == LimitMode.On ? 1 : 0);
+            AddMeasure(Counter_Limited, limitMode == LimitMode.On ? 1 : 0);
             PoeThreadSharedContext.Instance.TargetProcess = UsedTP;
 
 
-            DoGuiUpdate();
+            
 
         }
 

@@ -220,6 +220,14 @@ LegendTextPaint="{Binding LegendTextPaint}">
                                 </Border>
                                 <Border Height="20"/>
 
+                                <Border Margin="5,5,5,5">
+                                    <StackPanel   Orientation="Vertical">
+                                        <CheckBox FontSize="20" Content="POE2 Recovery" IsChecked="{Binding AppConfig.ThrottleConfig.IsRecovery }"/>
+                                        <TextBlock FontSize="16" TextWrapping="WrapWithOverflow" Text="when process is not responding, it will set process realtime (needs admin rights!)" FontStyle="Italic"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Height="20"/>
+
                             </StackPanel>
                         </Expander>
 
@@ -243,40 +251,47 @@ LegendTextPaint="{Binding LegendTextPaint}">
                 
             </StackPanel>
         </ScrollViewer>
-        <StatusBar Grid.Row="1">
-            <StatusBarItem Width="20"/>
-            <StatusBarItem >
-                <Label Content="!NEW Version!" Foreground="Black" Background="Yellow" FontSize="20" Visibility="{Binding VisNewVersionAvaible}"/>
-            </StatusBarItem>
+        <Border Grid.Row="1">
+            <StackPanel>
+                <StatusBar>
+                    <StatusBarItem>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Cylcetimes: " FontSize="12"/>
+                            <Label Content="{Binding State.CycleTimeCaption}" FontSize="12"/>
+                        </StackPanel>
+                    </StatusBarItem>
+                </StatusBar>
+                <StatusBar>
 
-            <StatusBarItem Width="10"/>
-            <StatusBarItem>
-                <TextBlock FontSize="20">
+                    <StatusBarItem Width="20"/>
+                    <StatusBarItem >
+                        <Label Content="!NEW Version!" Foreground="Black" Background="Yellow" FontSize="20" Visibility="{Binding VisNewVersionAvaible}"/>
+                    </StatusBarItem>
+
+                    <StatusBarItem Width="10"/>
+                    <StatusBarItem>
+                        <TextBlock FontSize="20">
 <Hyperlink NavigateUri="https://github.com/CrimsonED1/POE2loadingPainFix/tree/main" RequestNavigate="Hyperlink_RequestNavigate">
 got to project on GitHub
 </Hyperlink>
-                </TextBlock>
-                </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
-                
-                
-                <TextBlock FontSize="20" Background="Pink" Foreground="Black">
-<Hyperlink NavigateUri="https://www.paypal.me/crimsoned" RequestNavigate="Hyperlink_RequestNavigate">
+                        </TextBlock>
+                    </StatusBarItem>
+                    <Separator/>
+                    <StatusBarItem Width="140" >
+
+
+                        <TextBlock FontSize="20" Width="140" Background="Pink" Foreground="Black" >
+<Hyperlink NavigateUri="https://www.paypal.me/crimsoned" RequestNavigate="Hyperlink_RequestNavigate" >
 Donate
 </Hyperlink>
-                </TextBlock>
+                        </TextBlock>
 
-            </StatusBarItem>
-            <Separator/>
+                    </StatusBarItem>
+                    <Separator/>
 
-            <StatusBarItem>
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Cylcetime: " FontSize="20"/>
-                    <Label Content="{Binding State.CycleTimeCaption}" FontSize="20"/>
-                </StackPanel>
-            </StatusBarItem>
-        </StatusBar>
+                </StatusBar>
+            </StackPanel>
+        </Border>
     </Grid>
 
 </mah:MetroWindow>

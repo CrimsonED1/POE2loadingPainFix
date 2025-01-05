@@ -69,7 +69,7 @@ namespace POE2loadingPainFix
             {
                 if (ThreadStates.Length == 0)
                     return "";
-                var res = ThreadStates.Select(x => x.CycleTime!=null ?  $"{x.ThreadType.Name}={x.CycleTime.Value.TotalMilliseconds:n0} ms" : "N/A").ToSingleString();
+                var res = ThreadStates.Select(x => x.CycleTime!=null ?  $"{x.Caption}={x.CycleTime.Value.TotalMilliseconds:n0} ms" : $"{x.Caption}=N/A").ToSingleString(", ");
                 return res;
             }
         }

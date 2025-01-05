@@ -5,7 +5,7 @@ namespace POE2loadingPainFix
     public class PoeThreadRecovery : PoeThread
     {
         public const string Counter_NotResponding = "NOTRESPONDING";
-
+        public override string Caption => "R";
         public PoeThreadRecovery() : base()
         {
         }
@@ -54,80 +54,84 @@ namespace POE2loadingPainFix
             }
 #endif
 
-            if (responding)
+
+            if (UsedConfig.IsRecovery && Environment.IsPrivilegedProcess)
             {
-                LastResponseDT = DateTime.Now;
-
-
-                //set prio
-                if (cur_prio == ProcessPriorityClass.RealTime)
+                if (responding)
                 {
-                    poeProcess.PriorityClass = ProcessPriorityClass.Normal;
-                }
-                PoeThreadSharedContext.Instance.IsTryRecovery = false;
-                IsRealTimeSet = false;
+                    LastResponseDT = DateTime.Now;
 
-                Recovery_MaximumTime = null;
-            }
-            else
-            {
-                //ELSE RECOVERY!!!
-                PoeThreadSharedContext.Instance.IsTryRecovery = true;
 
-                if (!IsRealTimeSet)
-                {
-#if DEBUG
-                    if (Recovery_Restart_DelayTime != null)
-                        Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - Recovery_Restart_DelayTime: {Recovery_Restart_DelayTime}");
-#endif
-
-                    if (Recovery_Restart_DelayTime == null || Recovery_Restart_DelayTime.Elapsed.TotalSeconds > 5)
+                    //set prio
+                    if (cur_prio == ProcessPriorityClass.RealTime)
                     {
-                        Recovery_Restart_DelayTime = Stopwatch.StartNew();
-                        Recovery_MaximumTime = Stopwatch.StartNew();
-                        if (poeProcess.PriorityClass != ProcessPriorityClass.RealTime)
-                        {
-
-#if DEBUG
-                            Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - NO RESPONSE SET REALTIME");
-#endif
-                            poeProcess.PriorityBoostEnabled = true;
-                            poeProcess.PriorityClass = ProcessPriorityClass.RealTime;
-                            IsRealTimeSet = true;
-#if DEBUG
-                            Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - NO RESPONSE SET REALTIME, DONE");
-#endif
-                        }
+                        poeProcess.PriorityClass = ProcessPriorityClass.Normal;
                     }
+                    PoeThreadSharedContext.Instance.IsTryRecovery = false;
+                    IsRealTimeSet = false;
+
+                    Recovery_MaximumTime = null;
                 }
                 else
                 {
-#if DEBUG
-                    if (Recovery_MaximumTime != null)
-                        Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - Recovery_MaximumTime: {Recovery_MaximumTime}");
-#endif
+                    //ELSE RECOVERY!!!
+                    PoeThreadSharedContext.Instance.IsTryRecovery = true;
 
-                    if (Recovery_MaximumTime != null && Recovery_MaximumTime.Elapsed.TotalSeconds > 5)
+                    if (!IsRealTimeSet)
                     {
 #if DEBUG
-                        Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - FALLBACK! Set to realtime not working!");
+                        if (Recovery_Restart_DelayTime != null)
+                            Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - Recovery_Restart_DelayTime: {Recovery_Restart_DelayTime}");
 #endif
-                        //FALLBACK, POE doesnt go to normal state!
-                        var usedValue = ProcessPriorityClass.Normal;
-                        poeProcess.PriorityClass = usedValue;
-                        Recovery_MaximumTime = null;
-                        IsRealTimeSet = false;
 
-                        Recovery_Restart_DelayTime = Stopwatch.StartNew();
+                        if (Recovery_Restart_DelayTime == null || Recovery_Restart_DelayTime.Elapsed.TotalSeconds > 5)
+                        {
+                            Recovery_Restart_DelayTime = Stopwatch.StartNew();
+                            Recovery_MaximumTime = Stopwatch.StartNew();
+                            if (poeProcess.PriorityClass != ProcessPriorityClass.RealTime)
+                            {
 
+#if DEBUG
+                                Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - NO RESPONSE SET REALTIME");
+#endif
+                                poeProcess.PriorityBoostEnabled = true;
+                                poeProcess.PriorityClass = ProcessPriorityClass.RealTime;
+                                IsRealTimeSet = true;
+#if DEBUG
+                                Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - NO RESPONSE SET REALTIME, DONE");
+#endif
+                            }
+                        }
                     }
-                }
+                    else
+                    {
+#if DEBUG
+                        if (Recovery_MaximumTime != null)
+                            Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - Recovery_MaximumTime: {Recovery_MaximumTime}");
+#endif
 
-            }
+                        if (Recovery_MaximumTime != null && Recovery_MaximumTime.Elapsed.TotalSeconds > 5)
+                        {
+#if DEBUG
+                            Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - FALLBACK! Set to realtime not working!");
+#endif
+                            //FALLBACK, POE doesnt go to normal state!
+                            var usedValue = ProcessPriorityClass.Normal;
+                            poeProcess.PriorityClass = usedValue;
+                            Recovery_MaximumTime = null;
+                            IsRealTimeSet = false;
+
+                            Recovery_Restart_DelayTime = Stopwatch.StartNew();
+
+                        }
+                    }
+
+                }
+            }//isrecovery
 
             LastResponseValue = responding;
 
-            ThreadState.AddMeasure(Counter_NotResponding, !responding ? 1 : 0);
+            AddMeasure(Counter_NotResponding, !responding ? 1 : 0);
 
 
         }//exec

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace POE2loadingPainFix
 {
@@ -69,12 +70,11 @@ namespace POE2loadingPainFix
 #endif
                 }
             }
-
             sw.Stop();
+
 #if DEBUG
             Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - ThrottleProcess Threads: {thread_done_count}/{thread_count} Time: {sw.Elapsed.TotalMilliseconds:N1} msecs");
 #endif
-
             return thread_done_count;
         }
 

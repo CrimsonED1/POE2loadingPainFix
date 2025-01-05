@@ -38,7 +38,7 @@ namespace DummyPOE
             if (!System.IO.File.Exists(PathLog))
                 System.IO.File.WriteAllText(PathLog, "asdf");
 
-            btLevelDone_Click(this, null);
+            //btLevelDone_Click(this, null);
             this.DataContext = this;
         }
 

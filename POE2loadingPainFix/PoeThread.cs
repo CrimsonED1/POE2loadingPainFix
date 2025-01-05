@@ -1,25 +1,17 @@
-﻿using OpenTK.Audio.OpenAL;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 
 namespace POE2loadingPainFix
 {
 
     public class PoeThread
     {
-        protected object SyncState = new object();
+        protected object SyncTransferState = new object();
         private Thread? Thread;
 
+        public virtual string Caption => "";
 
 
 
-        
 
         protected ThreadPriority ThreadPriority = ThreadPriority.AboveNormal;
 
@@ -33,33 +25,20 @@ namespace POE2loadingPainFix
         protected int Next_ThreadSleep_LimitOn { get; set; } = 10;
         protected int Next_ThreadSleep_LimitOff { get; set; } = 100;
 
+        public DateTime DT_Cylcle { get; set; } = DateTime.Now;
+        public DateTime DT_LastCylce { get; set; } = DateTime.Now.AddMinutes(-1);
+        protected ThreadState ThreadState;
+        protected ThreadState ThreadStateReady;
 
         protected PoeThread()
         {
             UsedConfig = PoeThreadSharedContext.Instance.Config;
-            ThreadState = new ThreadState(this.GetType());
+            ThreadState = new ThreadState(this.GetType(), this.Caption);
+            ThreadStateReady = new ThreadState(this.GetType(), this.Caption);
         }
 
-        public bool IsThreadStateReady { get; set; } = false;
 
-        private ThreadState _ThreadState;
-        protected ThreadState ThreadState
-        {
-            get
-            {
-                lock (SyncState)
-                {
-                    return _ThreadState;
-                }
-            }
-            set
-            {
-                lock (SyncState)
-                {
-                    _ThreadState = value;
-                }
-            }
-        }
+
 
         /// <summary>
         /// take state and generate new!
@@ -67,12 +46,24 @@ namespace POE2loadingPainFix
         /// <returns></returns>
         public ThreadState TakeThreadState()
         {
-            lock (SyncState)
+            ThreadState res;
+#if DEBUG
+            var sw = Stopwatch.StartNew();
+#endif
+
+            lock (SyncTransferState)
             {
-                var current = ThreadState;
-                ThreadState = new ThreadState(this.GetType());
-                return current;
+                var current = ThreadStateReady;
+                ThreadStateReady = new ThreadState(this.GetType(), this.Caption);
+                res = current;
             }
+#if DEBUG
+            sw.Stop();
+            if (sw.Elapsed.TotalSeconds > 1)
+                Debugging.Step();
+#endif
+
+            return res;
         }
 
         private void Intrernal_Thread_Execute(object? sender)
@@ -87,15 +78,10 @@ namespace POE2loadingPainFix
                 Next_ThreadSleep_LimitOn = 10;
                 Next_ThreadSleep_LimitOff = 100;
 
-                if (UsedTP == null)
-                    IsThreadStateReady = false;
 
-                lock (SyncState) //lock until cycle done
+                try
                 {
-
-                    try
-                    {
-                        ThreadState.DT_Cylcle = DateTime.Now;
+                        DT_Cylcle = DateTime.Now;
                         Process? process = null;
                         if (UsedTP != null)
                         {
@@ -117,44 +103,61 @@ namespace POE2loadingPainFix
 
 
                         Thread_Execute(process);
-                        ThreadState.DT_LastCylce = ThreadState.DT_Cylcle;
+                        DT_LastCylce = DT_Cylcle;
                         ThreadState.Exception = null;
-                        if(UsedTP!=null)
-                            IsThreadStateReady = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        ThreadState.Exception = ex;
-                        IsThreadStateReady = true;
-                    }
-                    finally
-                    {
-                        sw.Stop();
-                        ThreadState.CycleTime = sw.Elapsed;
+                }
+                catch (Exception ex)
+                {
+                    ThreadState.Exception = ex;
+                }
+                finally
+                {
+                    sw.Stop();
+                    ThreadState.CycleTime = sw.Elapsed;
 #if DEBUG
-                        if (ThreadState.CycleTime > TimeSpan.FromMilliseconds(150))
-                            Trace.WriteLine($"CycleTime High! Thread: {ThreadState.ThreadType.Name} : {ThreadState.CycleTime.Value.TotalMilliseconds}");
+                    if (ThreadState.CycleTime > TimeSpan.FromMilliseconds(500))
+                        Trace.WriteLine($"CycleTime High! Thread: {ThreadState.ThreadType.Name} : {ThreadState.CycleTime.Value.TotalMilliseconds}");
 #endif
-                    }
+                }
+
+                try
+                {
+                    Thread_Execute_2();
+                }
+                catch
+                { }
 
 
-                    try
-                    {
-                        Thread_Execute_2();
-                    }
-                    catch
-                    { }
-                }//lock syncstate
+                lock(SyncTransferState)
+                {
+                    ThreadStateReady.MoveDataFrom(ThreadState);
+                }
+
 
                 ////Faster when POE2 is limited
-                if (CurrentLimitMode==LimitMode.On)
+                if (CurrentLimitMode == LimitMode.On)
                     Thread.Sleep(Next_ThreadSleep_LimitOn);
-                else 
+                else
                     Thread.Sleep(Next_ThreadSleep_LimitOff);
 
             }//while
 
             Debugging.Step();
+        }
+
+        protected void AddMeasure(string measureName, double value)
+        {
+            if (DT_Cylcle == DT_LastCylce)
+                return; //prevent adding dupes!
+
+            List<DtValue> values;
+            if (!ThreadState.Measures.TryGetValue(measureName, out values))
+            {
+                values = new List<DtValue>();
+                ThreadState.Measures.Add(measureName, values);
+            }
+
+            values.Add(new DtValue(DT_Cylcle, value));
         }
 
         protected virtual void Thread_Execute(Process? poeProcess)
@@ -170,7 +173,7 @@ namespace POE2loadingPainFix
         public virtual void Start()
         {
             Stop();
- 
+
 
             if (Thread != null)
             {
@@ -191,7 +194,7 @@ namespace POE2loadingPainFix
             Terminate = true;
             if (Thread != null)
             {
-                Thread = null;                
+                Thread = null;
             }
         }
     }

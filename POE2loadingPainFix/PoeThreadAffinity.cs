@@ -10,6 +10,7 @@ namespace POE2loadingPainFix
     public class PoeThreadAffinity:PoeThread
     {
         public const string Counter_AffinityPercent = "AFFINITY%";
+        public override string Caption => "AF";
 
         public const ProcessPriorityClass Limited_PriorityClass = ProcessPriorityClass.BelowNormal;
 
@@ -47,14 +48,51 @@ namespace POE2loadingPainFix
         {
             if (UsedTP == null || poeProcess==null)
                 return;
-            if (!UsedConfig.IsLimit_PrioLower)
-                return;
+
 
             bool isrecovery = PoeThreadSharedContext.Instance.IsTryRecovery;
             if (isrecovery)
             {
                 return;
             }
+
+            //Restore default...
+            //##########################################
+            if (!UsedConfig.IsLimit_PrioLower)
+            {
+                var cur = poeProcess.PriorityClass;
+                var usedValue = UsedTP.Orginal_PriortyClass;
+                if (cur != usedValue)
+                {
+                    poeProcess.PriorityClass = usedValue;
+                
+                }
+            }
+            if (!UsedConfig.IsLimit_RemovePrioBurst)
+            {
+                var cur = poeProcess.PriorityBoostEnabled;
+                var usedValue = UsedTP.Orginal_PriorityBoostEnabled;
+                if (cur != usedValue)
+                {
+                    poeProcess.PriorityBoostEnabled = usedValue;
+
+                }
+            }
+            if (!UsedConfig.IsLimit_SetAffinity)
+            {
+                var cur = poeProcess.ProcessorAffinity;
+                var usedValue = UsedTP.Orginal_Affinity;
+                if (cur != usedValue)
+                {
+                    poeProcess.ProcessorAffinity = usedValue;
+
+                }
+            }
+
+            if (!UsedConfig.IsLimit_PrioLower && !UsedConfig.IsLimit_RemovePrioBurst && !UsedConfig.IsLimit_SetAffinity)
+                return;
+
+            //##########################################
 
             switch (UsedTP.LimitMode)
             {

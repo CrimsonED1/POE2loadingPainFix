@@ -30,7 +30,7 @@ namespace POE2loadingPainFix
         public bool IsLimit_RemovePrioBurst { get; set; } = false;
         public bool IsLimit_PrioLower { get; set; } = false;
 
-        
+        public bool IsRecovery { get; set; } = false;
         public bool IsLimit_ViaThreads { get; set; } = true;
 
         public event PropertyChangedEventHandler? PropertyChanged;

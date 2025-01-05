@@ -7,7 +7,7 @@ namespace POE2loadingPainFix
         public const string Counter_CpuUsage = "CPUUSAGE";
         public const string Counter_DiskUsage = "DISKUSAGE";
         public const string Counter_IORead = "IOREAD";
-
+        public override string Caption => "PFC";
 
         PerformanceCounter? Disk_Time_Counter;
         PerformanceCounter? Process_IO_ReadBytesPerSecCounter;
@@ -120,12 +120,11 @@ namespace POE2loadingPainFix
             if (ioReadMBS > 0)
                 Debugging.Step();
 
+            
 
-
-
-            ThreadState.AddMeasure(Counter_CpuUsage, cpuusage);
-            ThreadState.AddMeasure(Counter_DiskUsage, diskTime);
-            ThreadState.AddMeasure(Counter_IORead, ioReadMBS);
+            AddMeasure(Counter_CpuUsage, cpuusage);
+            AddMeasure(Counter_DiskUsage, diskTime);
+            AddMeasure(Counter_IORead, ioReadMBS);
 
         }
 

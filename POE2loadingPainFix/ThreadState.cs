@@ -2,10 +2,13 @@
 {
     public class ThreadState
     {
-        public ThreadState(Type threadType)
+        public ThreadState(Type threadType,string caption)
         {
             ThreadType = threadType;
+            Caption = caption;
         }
+
+        public string Caption { get; }
 
         public Type ThreadType { get; }
         public TimeSpan? CycleTime { get; set; }
@@ -14,24 +17,34 @@
         public Dictionary<string, List<DtValue>> Measures { get; } = new Dictionary<string, List<DtValue>>();
 
 
-        public DateTime DT_Cylcle { get; set; } = DateTime.Now;
-        public DateTime DT_LastCylce { get; set; } = DateTime.Now.AddMinutes(-1);
+ 
 
 
-        public void AddMeasure(string measureName, double value)
+    }
+
+    public static class ThreadStateExtensions
+    {
+
+        public static void MoveDataFrom(this ThreadState targetState, ThreadState sourceState)
         {
-            if (DT_Cylcle == DT_LastCylce)
-                return; //prevent adding dupes!
+            targetState.CycleTime = sourceState.CycleTime;
+            targetState.Exception = sourceState.Exception;
 
-            List<DtValue> values;
-            if (!Measures.TryGetValue(measureName, out values))
+            if (sourceState.Measures.Count > 0)
             {
-                values = new List<DtValue>();
-                Measures.Add(measureName, values);
+                foreach (var kv in sourceState.Measures)
+                {
+                    List<DtValue> values;
+                    if (!targetState.Measures.TryGetValue(kv.Key, out values))
+                    {
+                        values = new List<DtValue>();
+                        targetState.Measures.Add(kv.Key, values);
+                    }
+                    values.AddRange(kv.Value);
+                }
+
+                sourceState.Measures.Clear();
             }
-
-            values.Add(new DtValue(DT_Cylcle, value));
-
 
 
         }

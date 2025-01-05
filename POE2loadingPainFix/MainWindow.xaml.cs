@@ -308,24 +308,26 @@ namespace POE2loadingPainFix
 
             OnPropertyChanged(nameof(State));
 
+            bool raiseExChanged = false;
             if (State.ExceptionsCaption != LastExceptionsCaptions)
             {
-                bool raiseChanged = false;
                 var cuurentEX = State.ThreadStates.Where(x => x.Exception != null).Select(x => x.Exception!).ToArray();
                 LastExceptions = cuurentEX;
                 LastExceptionsCaptions = State.ExceptionsCaption;
-                if (raiseChanged)
-                {
-                    OnPropertyChanged(nameof(LastExceptionsCaptions));
-                    OnPropertyChanged(nameof(VisError));
-                }
+                raiseExChanged = true;
             }
             else
             {
-                LastExceptions = null;
-                LastExceptionsCaptions = "";
+                //if(State.ExceptionsCaption == "" && LastExceptionsCaptions!="")
+                //LastExceptions = null;
+                //LastExceptionsCaptions = "";
             }
 
+            if (raiseExChanged)
+            {
+                OnPropertyChanged(nameof(LastExceptionsCaptions));
+                OnPropertyChanged(nameof(VisError));
+            }
 
             lock (SyncRoot)
             {
@@ -473,9 +475,25 @@ namespace POE2loadingPainFix
 
                 lines.Add($"POE2loadingPainFix(Version) = {Version}");
                 lines.Add($"CPU = {CpuCaption}");
+                if (this.State != null)
+                {
+                    if(this.State.TargetProcess!=null)
+                        lines.Add($"POE2 = {this.State.TargetProcess.ImagePath}");
+                    lines.Add($"CycleTimes = {this.State.CycleTimeCaption}");
+                }
+                lines.Add($"##############################");
                 lines.Add($"LimitKind = {this.AppConfig.ThrottleConfig.LimitKind}");
-                lines.Add($"InLimitAffinity = {this.AppConfig.ThrottleConfig.InLimitAffinity.Select(x => x.ToString()).ToSingleString()}");
                 lines.Add($"LimitToNormalDelaySecs = {this.AppConfig.ThrottleConfig.LimitToNormalDelaySecs}");
+                lines.Add($"##############################");
+                lines.Add($"IsRecovery = {this.AppConfig.ThrottleConfig.IsRecovery}");
+                lines.Add($"InLimitAffinity = {this.AppConfig.ThrottleConfig.InLimitAffinity.Select(x => x.ToString()).ToSingleString()}");
+                lines.Add($"IsLimit_SetAffinity = {this.AppConfig.ThrottleConfig.IsLimit_SetAffinity}");
+                lines.Add($"IsLimit_RemovePrioBurst = {this.AppConfig.ThrottleConfig.IsLimit_RemovePrioBurst}");
+                lines.Add($"IsLimit_PrioLower = {this.AppConfig.ThrottleConfig.IsLimit_PrioLower}");
+                lines.Add($"##############################");
+                lines.Add($"IsLimit_ViaThreads = {this.AppConfig.ThrottleConfig.IsLimit_ViaThreads}");
+                lines.Add($"LimitThreads_Pause = {this.AppConfig.ThrottleConfig.LimitThreads_Pause_Caption}");
+                lines.Add($"LimitThreads_Run = {this.AppConfig.ThrottleConfig.LimitThreads_Run_Caption}");
                 additionalinfos = lines.ToSingleString(Environment.NewLine);
             }
             catch { }
