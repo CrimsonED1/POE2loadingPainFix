@@ -68,7 +68,14 @@ namespace POE2loadingPainFix
                     {
                         step = "Pre SuspendThread";
                         SuspendThread(hThread);
-                        Thread.Sleep(targetdelayMS);
+                        if(targetdelayMS<=0)
+                        {
+                            
+                        }
+                        else
+                        {
+                            Thread.Sleep(targetdelayMS);
+                        }
                         // Perform your operations here
                         step = "Pre ResumeThread";
                         ResumeThread(hThread);
@@ -87,7 +94,7 @@ namespace POE2loadingPainFix
             }
             sw.Stop();
 
-#if DEBUG
+#if DEBUG2
             Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - ThrottleProcess Threads: {thread_done_count}/{thread_count} Time: {sw.Elapsed.TotalMilliseconds:N1} msecs");
 #endif
             return thread_done_count;

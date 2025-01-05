@@ -1,4 +1,7 @@
-﻿namespace POE2loadingPainFix
+﻿using System.Diagnostics;
+using System;
+
+namespace POE2loadingPainFix
 {
     public class PoeThreadSharedContext
     {
@@ -40,6 +43,9 @@
             set
             {
                 _Config = value;
+#if DEBUG
+                Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - CONFIG CHANGED! {_Config}");
+#endif
             }
         }
 

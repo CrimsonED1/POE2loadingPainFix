@@ -51,7 +51,7 @@ namespace POE2loadingPainFix
 
             var grp = states.GroupBy(x=>x,(key,g)=>new { State = key, Count = g.Count() }).ToList();
 
-#if DEBUG
+#if DEBUG2
             var caption = grp.Select(x => $"{x.State}={x.Count}").ToSingleString(", ");
             Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - Threads: {caption}");
 #endif

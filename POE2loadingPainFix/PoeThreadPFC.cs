@@ -95,8 +95,7 @@ namespace POE2loadingPainFix
 
             InitCounters();
 
-
-
+             
             double ioReadMBS = 0;
 
             float ioRead = Process_IO_ReadBytesPerSecCounter!.NextValue();

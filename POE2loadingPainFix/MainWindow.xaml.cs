@@ -29,6 +29,7 @@ namespace POE2loadingPainFix
 
         private PoeThreadMain _PoeThreadMain;
 
+        public string OrgTitle { get; }
         public AppConfig AppConfig { get; private set; }
 
         public State? State { get; private set; }
@@ -62,8 +63,20 @@ namespace POE2loadingPainFix
             get => AppConfig.ThrottleConfig.LimitKind == LimitKind.ViaClientLog;
             set => AppConfig.ThrottleConfig.LimitKind = LimitKind.ViaClientLog;
         }
-        public bool IsUpdateGraphs { get; set; } = true;
-        public bool IsUpdateGraphsThreads { get; set; } = true;
+
+        public bool IsExpertMode
+        {
+            get => AppConfig.AppConfigKind == AppConfigKind.Expert;
+            set => AppConfig.AppConfigKind = AppConfigKind.Expert;
+        }
+
+        public bool IsEasyMode
+        {
+            get => AppConfig.AppConfigKind == AppConfigKind.Easy;
+            set => AppConfig.AppConfigKind = AppConfigKind.Easy;
+        }
+
+
 
         public int CPUs { get; set; }
 
@@ -95,7 +108,7 @@ namespace POE2loadingPainFix
             InitializeComponent();
             CPUs = Environment.ProcessorCount;
             this.Title = this.Title + $" Version: {Version} Processors: {CPUs}";
-
+            OrgTitle = this.Title;
 
             AppConfig = AppConfig.LoadAppConfig(Version);
 
@@ -255,8 +268,33 @@ namespace POE2loadingPainFix
 
         private void AppConfig_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (!_IsInit)
-                AppConfig.SaveAppConfig(AppConfig);
+            if (_IsInit)
+                return;
+            
+            if(e.PropertyName == nameof(AppConfig.ThrottleConfig))
+            {
+                AppConfig.ThrottleConfig.PropertyChanged += Config_PropertyChanged;
+            }
+
+            if(e.PropertyName ==  nameof(AppConfig.AppConfigKind))
+            {
+                if(AppConfig.AppConfigKind==AppConfigKind.Easy)
+                {
+                    this.Height = 300;
+                    this.Width = 800;
+                }
+                else
+                {
+                    this.Height = 900;
+                    this.Width = 800;
+                }
+
+                //Config_PropertyChanged(null, null);
+            }
+
+
+            AppConfig.SaveAppConfig(AppConfig);
+            
 
         }
 
@@ -308,14 +346,19 @@ namespace POE2loadingPainFix
 
         private void MainWindow_LocationChanged(object? sender, EventArgs e)
         {
-            if (!_IsInit)
-                AppConfig.StoreWindowPosition(this);
+            if (_IsInit)
+                return;
+            AppConfig.StoreWindowPosition(this);
         }
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (!_IsInit)
-                AppConfig.StoreWindowPosition(this);
+            if (_IsInit)
+                return;
+            AppConfig.StoreWindowPosition(this);
+#if DEBUG
+            this.Title = $"{OrgTitle} DEBUG-H,W: {this.Width},{this.Height}";
+#endif
         }
 
         private static double[] GetSeparators()
@@ -347,7 +390,7 @@ namespace POE2loadingPainFix
 
         private void GuiUpdate_GraphsMain(DateTime cur)
         {
-            if (!IsUpdateGraphs)
+            if (!AppConfig.IsUpdateGraphs)
                 return;
             if (State == null)
                 return;
@@ -429,7 +472,7 @@ namespace POE2loadingPainFix
 
         private void GuiUpdate_GraphsThreads(DateTime cur)
         {
-            if (!IsUpdateGraphsThreads)
+            if (!AppConfig.IsUpdateGraphsThreads)
                 return;
             if (State == null)
                 return;
@@ -521,7 +564,7 @@ namespace POE2loadingPainFix
 
         }
 
-        private void Config_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        private void Config_PropertyChanged(object? sender, PropertyChangedEventArgs? e)
         {
             if (_IsInit)
                 return;

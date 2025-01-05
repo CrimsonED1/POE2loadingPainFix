@@ -10,7 +10,7 @@ namespace POE2loadingPainFix
         ViaClientLog = 4,
     }
 
-    public class Config : ICloneable, INotifyPropertyChanged
+    public partial class Config : ICloneable, INotifyPropertyChanged
     {
 
         public bool[] InLimitAffinity { get; set; } = new bool[] { true }; //min 1
@@ -18,7 +18,7 @@ namespace POE2loadingPainFix
         public int LimitThreads_Pause_MSecs { get; set; } = 10;
         public string LimitThreads_Pause_Caption => $"{LimitThreads_Pause_MSecs} MSecs";
 
-        public int LimitThreads_Run_MSecs { get; set; } = 10;
+        public int LimitThreads_Run_MSecs { get; set; } = 100;
         public string LimitThreads_Run_Caption => $"{LimitThreads_Run_MSecs} MSecs";
 
 
@@ -35,6 +35,11 @@ namespace POE2loadingPainFix
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        public override string ToString()
+        {
+            return $"LimitKind: {LimitKind} IsLimit_ViaThreads: {IsLimit_ViaThreads} IsLimit_SetAffinity: {IsLimit_SetAffinity}";
+        }
+
         public object Clone()
         {
             //return this.MemberwiseClone();
@@ -49,6 +54,7 @@ namespace POE2loadingPainFix
                 LimitThreads_Pause_MSecs = LimitThreads_Pause_MSecs,
                 LimitThreads_Run_MSecs = LimitThreads_Run_MSecs,
                 IsLimit_ViaThreads = IsLimit_ViaThreads,
+                IsRecovery = IsRecovery,                
             };
             return res;
 

@@ -11,58 +11,81 @@
         Title="POE2loadingPainFix" Height="950" Width="800" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="90*"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
-        <ScrollViewer >
-            <StackPanel>
-                <GroupBox Header="Exception:" Visibility="{Binding VisError}" >
-                    <StackPanel Orientation="Vertical">
-                        <TextBlock Text="{Binding LastExceptionsCaptions}" Background="Red" Foreground="Black"/>
-                        <Border Height="10"/>
-                        <Button x:Name="btShowFullError" Content="Show full error" Click="btShowFullError_Click" Width="200"/>
-                    </StackPanel>
-                </GroupBox>
-                <StackPanel Orientation="Horizontal">
-                    <Viewbox Visibility="{Binding VisWaitingExe}">
-                        <StackPanel Orientation="Horizontal">
-                            <Label Background="Cyan" Foreground="Black" FontSize="20" Content="Waiting for exe:" />
-                            <Label Background="Cyan" Foreground="Black" FontSize="20" Content="{Binding PoeExes}"/>
-                        </StackPanel>
-                    </Viewbox>
-                    <Viewbox Visibility="{Binding VisLimited}">
-                        <Label Background="Red" Foreground="Black" FontSize="20" Content="POE2 CPU Limited!"/>
-                    </Viewbox>
-                    <Viewbox Visibility="{Binding VisNormal}">
-                        <Label Background="Lime" FontSize="20" Foreground="Black" Content="POE2 CPU Normal"/>
-                    </Viewbox>
-                    <Viewbox Visibility="{Binding VisNotResponding}">
-                        <Label Background="Yellow" Foreground="Black" FontSize="20" Content="POE2 not responding"/>
-                    </Viewbox>
-                </StackPanel>
-
+        <StackPanel Grid.Row="0">
+            <GroupBox Header="Exception:" Visibility="{Binding VisError}" >
                 <StackPanel Orientation="Vertical">
-                    <StackPanel.Resources>
-                        <Style TargetType="Label">
-                            <Setter Property="FontSize" Value="20"/>
-                        </Style>
-                    </StackPanel.Resources>
-                    <StackPanel Orientation="Horizontal">
-
-                        <Label Content="PID: "/>
-                        <Label Content="{Binding State.TargetProcess.PID}"/>
-                        <Label Content="Affinity: "/>
-                        <Label Content="{Binding State.TargetProcess.AffinityCaption}"/>
-                        <Label Content="Priority: "/>
-                        <Label Content="{Binding State.TargetProcess.Current_PriortyClass}"/>
-                        <Label Content="PriorityBoostEnabled: "/>
-                        <Label Content="{Binding State.TargetProcess.Current_PriorityBoostEnabled}"/>
-
-                    </StackPanel>
-                    <Label Content="{Binding State.LimitCaption}" FontStyle="Italic"/>
+                    <TextBlock Text="{Binding LastExceptionsCaptions}" Background="Red" Foreground="Black"/>
+                    <Border Height="10"/>
+                    <Button x:Name="btShowFullError" Content="Show full error" Click="btShowFullError_Click" Width="200"/>
                 </StackPanel>
+            </GroupBox>
+            <StackPanel Orientation="Horizontal">
+                <Viewbox Visibility="{Binding VisWaitingExe}">
+                    <StackPanel Orientation="Horizontal">
+                        <Label Background="Cyan" Foreground="Black" FontSize="20" Content="Waiting for exe:" />
+                        <Label Background="Cyan" Foreground="Black" FontSize="20" Content="{Binding PoeExes}"/>
+                    </StackPanel>
+                </Viewbox>
+                <Viewbox Visibility="{Binding VisLimited}">
+                    <Label Background="Red" Foreground="Black" FontSize="20" Content="POE2 CPU Limited!"/>
+                </Viewbox>
+                <Viewbox Visibility="{Binding VisNormal}">
+                    <Label Background="Lime" FontSize="20" Foreground="Black" Content="POE2 CPU Normal"/>
+                </Viewbox>
+                <Viewbox Visibility="{Binding VisNotResponding}">
+                    <Label Background="Yellow" Foreground="Black" FontSize="20" Content="POE2 not responding"/>
+                </Viewbox>
+            </StackPanel>
 
-                <GroupBox Header="Limit Kind" FontSize="22">
+            <StackPanel Orientation="Vertical" >
+                <StackPanel.Resources>
+                    <Style TargetType="Label">
+                        <Setter Property="FontSize" Value="20"/>
+                    </Style>
+                </StackPanel.Resources>
+                <StackPanel Orientation="Horizontal" Visibility="{Binding AppConfig.IsExpertMode}">
+
+                    <Label Content="PID: "/>
+                    <Label Content="{Binding State.TargetProcess.PID}"/>
+                    <Label Content="Affinity: "/>
+                    <Label Content="{Binding State.TargetProcess.AffinityCaption}"/>
+                    <Label Content="Priority: "/>
+                    <Label Content="{Binding State.TargetProcess.Current_PriortyClass}"/>
+                    <Label Content="PriorityBoostEnabled: "/>
+                    <Label Content="{Binding State.TargetProcess.Current_PriorityBoostEnabled}"/>
+
+                </StackPanel>
+                <Label Content="{Binding State.LimitCaption}" FontStyle="Italic"/>
+            </StackPanel>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" >
+            <StackPanel>
+                
+
+                <Border>
+                    <Viewbox HorizontalAlignment="Left" Height="30">
+                        <UniformGrid Rows="1" Columns="2" >
+                            <UniformGrid.Resources>
+                                <Style TargetType="RadioButton">
+                                    <Setter Property="FontSize" Value="10"/>
+                                </Style>
+                            </UniformGrid.Resources>
+                            <RadioButton Content="Easy-Mode " GroupName="Mode" IsChecked="{Binding IsEasyMode}"/>
+                            <RadioButton Content="Expert-Mode " GroupName="Mode" IsChecked="{Binding IsExpertMode}"/>
+
+
+
+                        </UniformGrid>
+
+                    </Viewbox>
+                </Border>
+
+                <GroupBox Header="Limit Kind" FontSize="22" Visibility="{Binding AppConfig.IsExpertMode}">
                     <Viewbox HorizontalAlignment="Left" Height="70">
                         <UniformGrid Rows="2" Columns="2" >
                             <UniformGrid.Resources>
@@ -81,10 +104,10 @@
                     </Viewbox>
                 </GroupBox>
 
-                <Expander Header="Performance graphs" IsExpanded="{Binding AppConfig.IsGraphMain_Expanded}">
+                <Expander Header="Performance graphs" IsExpanded="{Binding AppConfig.IsGraphMain_Expanded}" Visibility="{Binding AppConfig.IsExpertMode}">
                     <StackPanel>
                         <Border Margin="5,5,5,5">
-                            <CheckBox FontSize="15" Content="Update graphs" IsChecked="{Binding IsUpdateGraphs}"/>
+                            <CheckBox FontSize="15" Content="Update graphs" IsChecked="{Binding AppConfig.IsUpdateGraphs}"/>
                         </Border>
                         <StackPanel Orientation="Horizontal">
                             <Label Content="CPU Usage (PFC: % Total):" FontSize="15"/>
@@ -111,10 +134,10 @@ LegendTextPaint="{Binding LegendTextPaint}">
                     </StackPanel>
                 </Expander>
 
-                <Expander Header="Thread graph" IsExpanded="{Binding AppConfig.IsGraphThreads_Expanded}">
+                <Expander Header="Thread graph" IsExpanded="{Binding AppConfig.IsGraphThreads_Expanded}" Visibility="{Binding AppConfig.IsExpertMode}">
                     <StackPanel>
                         <Border Margin="5,5,5,5">
-                            <CheckBox FontSize="15" Content="Update graphs" IsChecked="{Binding IsUpdateGraphsThreads}"/>
+                            <CheckBox FontSize="15" Content="Update graphs" IsChecked="{Binding AppConfig.IsUpdateGraphsThreads}"/>
                         </Border>
 
                         <StackPanel Orientation="Horizontal">
@@ -134,7 +157,7 @@ LegendTextPaint="{Binding LegendTextPaint}">
                 </Expander>
 
 
-                <GroupBox Header="Limit Settings">
+                <GroupBox Header="Limit Settings" Visibility="{Binding AppConfig.IsExpertMode}">
                     <StackPanel>
 
                         <StackPanel Orientation="Horizontal">
@@ -168,7 +191,7 @@ LegendTextPaint="{Binding LegendTextPaint}">
                                 </Grid.ColumnDefinitions>
                                 <Label  Grid.Column="0" Content="Limit Threads: Run threads (10ms default)"/>
                                 <Label  Grid.Column="1" Content="{Binding AppConfig.ThrottleConfig.LimitThreads_Pause_Caption}"/>
-                                <Slider Grid.Column="2" Value="{Binding AppConfig.ThrottleConfig.LimitThreads_Pause_MSecs}" Minimum="1" Maximum="1000"/>
+                                <Slider Grid.Column="2" Value="{Binding AppConfig.ThrottleConfig.LimitThreads_Pause_MSecs}" Minimum="0" Maximum="1000"/>
                             </Grid>
                         </Border>
 
@@ -179,7 +202,7 @@ LegendTextPaint="{Binding LegendTextPaint}">
                                     <ColumnDefinition Width="60"/>
                                     <ColumnDefinition Width="90*"/>
                                 </Grid.ColumnDefinitions>
-                                <Label  Grid.Column="0" Content="Limit Threads: Pause threads (10ms default)"/>
+                                <Label  Grid.Column="0" Content="Limit Threads: Pause threads (100ms default)"/>
                                 <Label  Grid.Column="1" Content="{Binding AppConfig.ThrottleConfig.LimitThreads_Run_Caption}"/>
                                 <Slider Grid.Column="2" Value="{Binding AppConfig.ThrottleConfig.LimitThreads_Run_MSecs}" Minimum="1" Maximum="1000"/>
                             </Grid>
@@ -270,9 +293,9 @@ LegendTextPaint="{Binding LegendTextPaint}">
                 
             </StackPanel>
         </ScrollViewer>
-        <Border Grid.Row="1">
+        <Border Grid.Row="2">
             <StackPanel>
-                <StatusBar>
+                <StatusBar Visibility="{Binding AppConfig.IsExpertMode}">
                     <StatusBarItem>
                         <StackPanel Orientation="Horizontal">
                             <Label Content="Cylcetimes: " FontSize="12"/>

@@ -4,19 +4,20 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
-using static System.Environment;
+using PropertyChanged;
 
 namespace POE2loadingPainFix
 {
     public enum AppConfigKind
     {
-        Optimized,
-        Custom
+        Easy,
+        Expert
     }
 
-    public class AppConfig : INotifyPropertyChanged
+    
+    public partial class AppConfig : INotifyPropertyChanged
     {
-        private AppConfigKind _AppConfigKind = AppConfigKind.Optimized;
+        private AppConfigKind _AppConfigKind = AppConfigKind.Easy;
         public AppConfigKind AppConfigKind
         {
             get=>_AppConfigKind;
@@ -26,22 +27,35 @@ namespace POE2loadingPainFix
                     return;
                 _AppConfigKind = value;
 
-                if(_AppConfigKind== AppConfigKind.Optimized)
+                if(_AppConfigKind== AppConfigKind.Easy)
                 {
                     ThrottleConfig = new Config();
+                    this.IsUpdateGraphs = false;
+                    this.IsUpdateGraphsThreads = false;
+                    
                     Init();
                 }
+                if(_AppConfigKind==AppConfigKind.Expert)
+                {
+                    this.IsUpdateGraphs = true;
+                    this.IsUpdateGraphsThreads = true;
+                }
+                OnPropertyChanged(nameof(IsExpertMode));
 
             }
         }
         public Rect Window_Position { get; set; }
         public Config ThrottleConfig { get; set; }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-
+        
         public bool IsGraphMain_Expanded { get; set; } = true;
         public bool IsGraphThreads_Expanded { get; set; }= true;
 
+        public bool IsUpdateGraphs { get; set; } = true;
+        public bool IsUpdateGraphsThreads { get; set; } = true;
+
+
+        public Visibility IsExpertMode => AppConfigKind== AppConfigKind.Expert ? Visibility.Visible: Visibility.Collapsed;
         public string Version { get; set; } = "";
 
         [JsonIgnore]
