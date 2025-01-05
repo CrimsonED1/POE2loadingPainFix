@@ -343,12 +343,35 @@ namespace POE2loadingPainFix
 
 
         }
+        
+        private bool IsTaskStorePosition = false;
+
+
 
         private void MainWindow_LocationChanged(object? sender, EventArgs e)
         {
             if (_IsInit)
                 return;
-            AppConfig.StoreWindowPosition(this);
+
+            if(!IsTaskStorePosition)
+            {
+                IsTaskStorePosition = true;
+                Task.Run(() =>
+                {
+                    Thread.Sleep(1000);
+
+                    Dispatcher.Invoke(() =>
+                    {
+#if DEBUG
+                        Trace.WriteLine($"{DateTime.Now.ToFullDT_German()} - Window Position changed");
+#endif
+                        AppConfig.StoreWindowPosition(this);
+                    });
+
+                    IsTaskStorePosition = false;
+                });
+            }            
+
         }
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -586,6 +609,7 @@ namespace POE2loadingPainFix
         {
             _PoeThreadMain?.Stop();
             Debugging.Step();
+            AppConfig.StoreWindowPosition(this);
         }
 
 
