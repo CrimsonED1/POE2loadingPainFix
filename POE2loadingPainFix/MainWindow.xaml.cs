@@ -21,7 +21,7 @@ namespace POE2loadingPainFix
     /// </summary>
     public partial class MainWindow : MetroWindow, INotifyPropertyChanged
     {
-        public string Version = "0.8";
+        public string Version = "0.9";
 
         /// <summary>
         /// https://stackoverflow.com/questions/54848286/performancecounter-physicaldisk-disk-time-wrong-value

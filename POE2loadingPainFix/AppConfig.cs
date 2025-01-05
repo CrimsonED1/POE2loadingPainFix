@@ -65,7 +65,14 @@ namespace POE2loadingPainFix
         [JsonConstructor]
         public AppConfig()
         {
+
+#if DEBUG
+            _AppConfigKind = AppConfigKind.Expert;
+#endif
+
             ThrottleConfig = new Config();
+
+
 
             Init();
 
@@ -126,7 +133,7 @@ namespace POE2loadingPainFix
 #if DEBUG
                 pathconfig = @"C:\Users\Karsten\OneDrive\Dokumente\Development\POE2loadingPainFix\bin_data\appconfig.json";
 #else
-            var commonpath = Environment.GetFolderPath(SpecialFolder.MyDocuments);
+            var commonpath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             pathconfig = System.IO.Path.Combine(commonpath, @"POE2loadingPainFix\appconfig.json");
             var dir = Path.GetDirectoryName(pathconfig);
             Directory.CreateDirectory(dir);
@@ -171,12 +178,19 @@ namespace POE2loadingPainFix
                 res.Init();
             }
 
-            if (res.Version != appVersion)
+            if (appVersion == "0.9")
             {
-                //patch old files!
-                res.ThrottleConfig.InLimitAffinity = new bool[1];
-                res.Init();
+                if (res.Version != appVersion)
+                {
+                    //patch old files!
+                    res.AppConfigKind = AppConfigKind.Easy;
+                    res.Init();
+                }
             }
+
+#if DEBUG
+            res.AppConfigKind = AppConfigKind.Expert;
+#endif
 
             res.Version = appVersion;
             return res;
@@ -185,8 +199,13 @@ namespace POE2loadingPainFix
 
         public static void SaveAppConfig(AppConfig appConfig)
         {
+            var opts = new JsonSerializerOptions(JsonSerializerOptions.Default)
+            {
+                WriteIndented = true,
+            };
             
-            string json = JsonSerializer.Serialize(appConfig);
+
+            string json = JsonSerializer.Serialize(appConfig, opts);
             File.WriteAllText(AppConfigPath, json, Encoding.UTF8);
         }
     }
