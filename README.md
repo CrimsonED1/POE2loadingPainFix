@@ -30,7 +30,7 @@ $${\color{green}Here \space is \space your \space new \space friend \space : \sp
 </ul>
 
 <H3>Supported versions:</H3>
-      <ul>
+<ul>
       <li>POE2-Steam</li>
       <li>POE2-Standalone</li>
 </ul>
@@ -40,13 +40,20 @@ $${\color{green}Here \space is \space your \space new \space friend \space : \sp
 <BR>
 -----------------
 
-Current Version: 0.9
+<H1>Current Version: 0.9</H1>
 
-<p>
+<h4>Current TODO / upcoming features:</h4>
+<ul>
+      <li>add Elegato StreamDeck support</li>
+      <li>verify thread limiting with BES</li>
+</ul>
+
+
+<H1>
 <a href="https://github.com/CrimsonED1/POE2loadingPainFix/releases">
   Releases
 </a>
-</p>
+            </H1>
 <br><br><br>
 <p>
   <a href="https://www.paypal.me/crimsoned">
@@ -61,16 +68,15 @@ Current Version: 0.9
 <H2>Easy is designed to users that are not well known with computers and the background this app does. NOTE! Switching from expert to easy will restore default settings!</H2>
 
 <H1>Main Screen (Easy Mode)</H1>
-<img src="https://github.com/user-attachments/assets/8afa7d58-3a56-47f7-872e-743497cc3df9">
-
+<img src="https://github.com/CrimsonED1/POE2loadingPainFix/blob/main/README_Sources/images/EasyMode.png?raw=true">
 
 <H1>Main Screen (Expert)</H1>
 
-<img src="https://github.com/user-attachments/assets/00b450d9-29d4-4a40-a543-c5b1cc480390">
-had no time yet...
+<img src="https://github.com/CrimsonED1/POE2loadingPainFix/blob/main/README_Sources/images/ExpertMode.png?raw=true">
 
 <H1>Expert Functions:</H1>
-<img src="https://github.com/CrimsonED1/POE2loadingPainFix/blob/main/README_Sources/images/auto_functions.png?raw=true" alt="autos">
+<H2>Choose limit mode (on/off/auto)</H2>
+<img src="https://github.com/CrimsonED1/POE2loadingPainFix/blob/main/README_Sources/images/auto_functions.png?raw=true">
 
 <ul>
       <li>always on: limitations are always set </li>
@@ -79,17 +85,40 @@ had no time yet...
       
 </ul>
 
-log file values to set limits:
+<H2>Auto Mode: Log file values to set limits:</H2>
+<ul>
+      <li>"Got Instance Details from login server" => set limits</li>
+      <li>"Delay: ON" => set limits</li>
+      <li>"Delay: OFF" => reset limits</li>
+</ul>
 <br>
-"Delay: OFF"
+
+<H2>Limit Settings: (kinds are thread limiting and affinity)</H2>
+<img src="https://github.com/CrimsonED1/POE2loadingPainFix/blob/main/README_Sources/images/limit_settings.png?raw=true">
+<H3>Delay reset limit to normal, affects all kinds of limiting</H3>
+
+<H3>Limit threads, Run/Pause</H3>
+The limitation for POE2 threads looks like this:
+<img src="https://github.com/CrimsonED1/POE2loadingPainFix/blob/main/README_Sources/images/signal_limit_threads.png?raw=true">
+the app tries to open the threads of POE2 every cylce to suspend/resume them. This will slow down the thread, and the CPU usage. 
+You can affect the duration of run and pause with the trackbars to set less or high cpu usage in this way. (take a look at the signal image)
+
+Technical background:
+There are several different "OpenThread-Versions". I tried implementing all of BES, but im not sure that i done them all right (BES is written in c++). I will try to compile and run BES theese days and check if the limits are equal with this app. Currently on my system only the main-thread is possible to be opend of POE2. But this seems to be enougth to get no hard freezes.
+The graphs and Label will show you how many threads POE2 have, how many are active, and how many could be limited.
+
+
 <br>
-"Got Instance Details from login server"
+<H1>Bugs/Exceptions</H1>
+If you get and Exception, or find any issue, please report them.
+It is very helpfull if you include the report from the exception dialog:
+<img src="https://github.com/CrimsonED1/POE2loadingPainFix/blob/main/README_Sources/images/exception_dialog.png?raw=true">
+
 <br>
-log file values to reset limit:
-<br>
-"Delay: ON"
-<br>
+
+
 <h3>other functions will be explained later, but i hope they are self explaining</h3>
+
 
 
 Use this tool without any warranty or any liability by the authors
