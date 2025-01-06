@@ -24,7 +24,7 @@ $${\color{green}Here \space is \space your \space new \space friend \space : \sp
 <H3>Depending on entries of the POE2 logfile. Limit is only done while starting POE2 and loading levels</H3>
 <H4>Limiting Options:</H4>
 <ul>
-      <li>Limiting threads. This is mostly like like 
+      <li>Limiting threads. This is mostly like 
             <a href="https://mion.yosei.fi/BES/">BES – Battle Encoder Shirasé</a> is doing. Getting every thread of a process, then suspend it, wait, then resume it (since V0.9 and now default). </li>
       <li>Limiting via affinity (not recommended)</li>
 </ul>
@@ -64,9 +64,10 @@ Current Version: 0.9
 <img src="https://github.com/user-attachments/assets/8afa7d58-3a56-47f7-872e-743497cc3df9">
 
 
-<H1>Main Screen (Expoert)</H1>
+<H1>Main Screen (Expert)</H1>
 
 <img src="https://github.com/user-attachments/assets/00b450d9-29d4-4a40-a543-c5b1cc480390">
+had no time yet...
 
 <H1>Expert Functions:</H1>
 <img src="https://github.com/CrimsonED1/POE2loadingPainFix/blob/main/README_Sources/images/auto_functions.png?raw=true" alt="autos">
