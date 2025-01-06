@@ -58,7 +58,7 @@ Current Version: 0.9
 
 <H1>Easy/Expert</H1>
 <img src="https://github.com/user-attachments/assets/56dc8b14-e44f-48c9-b79e-a3d16466946f">
-<H2>Easy is designed to users that are not well known computers.NOTE! Switching from expert to easy will restore default settings!</H2>
+<H2>Easy is designed to users that are not well known with computers and the background this app does. NOTE! Switching from expert to easy will restore default settings!</H2>
 
 <H1>Main Screen (Easy Mode)</H1>
 <img src="https://github.com/user-attachments/assets/8afa7d58-3a56-47f7-872e-743497cc3df9">
