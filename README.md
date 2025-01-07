@@ -40,7 +40,8 @@ $${\color{green}Here \space is \space your \space new \space friend \space : \sp
 <BR>
 -----------------
 
-<H1>Current Version: 0.9</H1>
+<H1>Current Version: 0.9
+</H1>
 
 <h4>Current TODO / upcoming features:</h4>
 <ul>
