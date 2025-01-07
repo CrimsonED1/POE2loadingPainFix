@@ -41,7 +41,7 @@ $${\color{green}Here \space is \space your \space new \space friend \space : \sp
 -----------------
 
 <H1>Current Version: 0.9
- T</H1>
+ </H1>
 
 <h4>Current TODO / upcoming features:</h4>
 <ul>
